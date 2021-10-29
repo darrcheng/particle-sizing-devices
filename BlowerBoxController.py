@@ -1,13 +1,12 @@
 import tkinter as tk
 import csv
 import time
+from tkinter.constants import FALSE
 import u3
 import LabJackPython
 from simple_pid import PID
 import threading
 d = u3.U3()
-#Test code
-
 
 ###########################################
 #test parameters
@@ -18,15 +17,19 @@ d = u3.U3()
 #HV scale = 2000:1
 
 # Initalize Labjack U3
+d.getCalibrationData()
+dac0_val = d.voltageToDACBits(2.2, dacNumber=0, is16Bits= False)
+d.getFeedback(u3.DAC0_8(dac0_val))
+
 dac1_val = d.voltageToDACBits(0)
 d.getFeedback(u3.DAC1_8(dac1_val))
 
 # Returns flow rate corrected by temperature and pressure  
-def flowUpdate():
-    slpm = (d.getAIN(3))/0.2
-    tFactor = (tempUpdate()+273.15)/273.15
-    pFactor = 100/pUpdate()
-    return (slpm*tFactor*pFactor)
+#def flowUpdate():
+#    slpm = (d.getAIN(3))/0.2
+#    tFactor = (tempUpdate()+273.15)/273.15
+#    pFactor = 100/pUpdate()
+#    return (slpm*tFactor*pFactor)
     
 # Returns Temperature Probe input
 # Temperature Probe in FIO0, correction factor: temp x 100
@@ -45,38 +48,39 @@ def pUpdate():
 
 
 ############################################
+
 # Default Settings
 voltageCycle = True
 trialCount = 0
-lvl = 10 #V will be 100
-uvl = 200 #'will be 8000' #V
+lvl = 10   # Lower Voltage Limit #V will be 100
+uvl = 200  # Upper Voltage Limit #V will be 8000' 
 bins = 10
-pidp = 3        #PID Proportional Gain
-pidi = 0.1      #PID Integral Gain
-pidd = 0.25     #PID Derivative Gain
+pidp = 0.2*(7)        #PID Proportional Gain
+pidi = 0.4*(7)/(1.2)      #PID Integral Gain
+pidd = 0.066*(7)*(1.2)     #PID Derivative Gain
 file = 'c:\\Users\\user\\Documents\\trialrun.csv'
 voltageUpdate = 100 #ms
-blowerFlow = 5 #L/min
-temp = 30.0 #deg C
-pressure = 100.0 #kPa
+blowerFlow = 5 # Set Blower Flow Rate in [LPM]
 timer = 0
 control = 0
 labjackVoltage = 0
 
-#threads
+# Initalizing threads for running blower and voltage setting codes
 
 b = None
 v = None
 #monitoring
 
 
-""" #Set Flow as AIN3
+#Set Flow as AIN3
 def flowUpdate():
-    slpm = (d.getAIN(3)-1)/0.2
+    slpm = (d.getAIN(3)-.85)/0.2
     tFactor = (tempUpdate()+273.15)/273.15
     pFactor = 100/(100+pUpdate())
-    return (slpm*tFactor*pFactor)
+#    return (slpm*tFactor*pFactor)
+    return (slpm)
     #return d.getAIN(3)
+"""
 #Set Temperature Probe to AIN0
 def tempUpdate():
     return ((d.getAIN(0))/0.01)
@@ -95,7 +99,6 @@ def pUpdate():
 runtime = tk.Tk()
 settings = tk.Frame(runtime)
 settings.pack()
-
 
 #######################################################
 # Define callback function for update button in Tkinter GUI
@@ -123,33 +126,23 @@ def bins_callback():
 def blowerFlow_callback():
     global blowerFlow
     blowerFlow = blowerFlow_e.get()
+    pid.setpoint = blowerFlow
 
-""" def pidp_callback():
-    global pidp
-    pidp = pidp_e.get()
-
-def pidi_callback():
-    global pidi
-    pidi = pidi_e.get()
-
-def pidd_callback():
-    global pidd
-    pidd = pidd_e.get()
- """
 def file_callback():
     global file
     file = file_e.get()
 
-""" def temp_callback():
-    global temp
-    temp = temp_e.get()
-
-def pressure_callback():
-    global pressure
-    pressure = pressure_e.get() """
 ###############################################################################
 
 def onStart():
+
+    #Reconfigure Start Button to Stop Button
+    start_b.configure(text='Stop', command=onClose)
+
+    #Configure PID Controller
+    pid = PID(int(pidp), int(pidi), int(pidd), setpoint=int(blowerFlow))
+
+
     #Reveal the Monitoring controls
     global trialCount
     trialCount +=1
@@ -173,8 +166,8 @@ def onStart():
 
                 # Pause for 0.5 seconds then update timer
                 # (Fix: Pull Date Time instead of arbritary time)
-                time.sleep (0.5)
-                timer += 0.5
+                time.sleep (0.2)
+                timer += 0.2
 
                 # Read temperature and update GUI
                 tempRead = tempUpdate()
@@ -197,7 +190,6 @@ def onStart():
                 flow_e.insert(0, flowRead)
 
                 # PID Function (Fix this)
-                pid = PID(int(pidp), int(pidi), int(pidd), setpoint=int(blowerFlow))
                 measured = flowUpdate()
                 control = pid(measured)
                 
@@ -205,18 +197,9 @@ def onStart():
                 data_writer.writerow([trialCount, timer, tempRead, measured])
                 
                 #Not Sure
-                dac0_val = d.voltageToDACBits(control)
+                dac0_val = d.voltageToDACBits(1)
                 d.getFeedback(u3.DAC0_8(dac0_val))
-
-
-                #print(flowUpdate())
-
-                #print(control)
-                #Adjust the blower flowrate with pid and temp/rh/p readings
-                #Keep it runnung then let hv restart
-
-
-
+                print(d.getAIN(3))
 
 
     #By defining a foreground function, the background process can continuously run and update its input values
@@ -226,6 +209,8 @@ def onStart():
         global uvl
         global bins
         global labjackVoltage
+
+        # If voltageCycle is selected
         if voltageCycle == True:
             voltage = int(lvl)
             increment = ((int(uvl)-int(lvl))/int(bins))
@@ -259,13 +244,13 @@ def onStart():
     b.start()
     v.start()
 
-
 def onClose():
+    #Reconfigure Stop Button to Start Button
+    start_b.configure(text='Run', command=onStart)
+
     global d
     d.close()
     runtime.destroy()
-
-
 
 #################################################################
 # Create the TKinter widgets that allow for manual DMA Blower settings
@@ -313,35 +298,9 @@ blowerFlow_b = tk.Button(settings, text="Update", command=blowerFlow_callback)
 blowerFlow_e.grid(row=4,column=3)
 blowerFlow_b.grid(row=4,column=4)
 
-""" # PID Controller 
-# Proportional Gain
-pid_label = tk.Label(settings, text = 'PID settings').grid(row=5, column=1)
-pidp_label = tk.Label(settings, text = 'P').grid(row=6, column=0)
-pidp_e = tk.Entry(settings)
-pidp_e.insert(0, pidp)
-pidp_b = tk.Button(settings, text="Update", command=pidp_callback)
-pidp_e.grid(row=6,column=1)
-pidp_b.grid(row=6,column=2)
-
-# Integral Gain
-pidi_label = tk.Label(settings, text = 'I').grid(row=7, column=0)
-pidi_e = tk.Entry(settings)
-pidi_e.insert(0, pidi)
-pidi_b = tk.Button(settings, text="Update", command=pidi_callback)
-pidi_e.grid(row=7,column=1)
-pidi_b.grid(row=7,column=2)
-
-# Derivative Gain
-pidd_label = tk.Label(settings, text = 'D').grid(row=8, column=0)
-pidd_e = tk.Entry(settings)
-pidd_e.insert(0, pidd)
-pidd_b = tk.Button(settings, text="Update", command=pidd_callback)
-pidd_e.grid(row=8,column=1)
-pidd_b.grid(row=8,column=2) """
 
 # File Location 
 data_storage_label = tk.Label(settings, text = 'Data Storage (File Location)').grid(row=5, column=3)
-#file_label = tk.Label(settings, text = 'File Location').grid(row=6, column=2)
 file_e = tk.Entry(settings)
 file_e.insert(0, file)
 file_b = tk.Button(settings, text="Update", command=file_callback)
@@ -361,29 +320,28 @@ voltageMonitor_label = tk.Label(settings, text = 'Current Voltage').grid(row=5,c
 voltageMonitor_e = tk.Entry(settings)
 voltageMonitor_e.insert(0, labjackVoltage*2000)
 
+# Start Button
 start_b = tk.Button(settings, text="Run", command=onStart)
 start_b.grid(row=9,column=3)
 
-
-
 ###############################################################################
 # Tkinter for displaying values of Temperature, RH and P during run 
-#tempRead = tempUpdate()
+
+# Define current temperature label
 temp_label = tk.Label(runtime, text = 'Temperature (C)')
-#temp_label.forget()
 temp_e = tk.Entry(runtime)
-#temp_e.forget()
+
+# Define current RH label
 rh_label = tk.Label(runtime, text = 'Relative Humidity')
-#rh_label.forget()
 rh_e = tk.Entry(runtime)
-#rh_e.forget()
+
+# Define current pressure label
 p_label = tk.Label(runtime, text = 'Pressure')
-#p_label.forget()
 p_e = tk.Entry(runtime)
-#p_e.forget()
+
+#Define flow rate label
 flow_label = tk.Label(runtime, text = 'Flow sLPM')
 flow_e = tk.Entry(runtime)
-#This is an infinite loop that runs in the background that updates the sensor readings at 5hz
 
 #############################################################
 #Populate the root window with navigation buttons
