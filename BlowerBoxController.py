@@ -3,6 +3,7 @@ import csv
 import time
 from tkinter.constants import FALSE
 import u3
+from LJTick import LJTickDAC
 import LabJackPython
 from simple_pid import PID
 import threading
@@ -24,12 +25,8 @@ d.getFeedback(u3.DAC0_8(dac0_val))
 dac1_val = d.voltageToDACBits(0)
 d.getFeedback(u3.DAC1_8(dac1_val))
 
-# Returns flow rate corrected by temperature and pressure  
-#def flowUpdate():
-#    slpm = (d.getAIN(3))/0.2
-#    tFactor = (tempUpdate()+273.15)/273.15
-#    pFactor = 100/pUpdate()
-#    return (slpm*tFactor*pFactor)
+tdac = LJTickDAC(d, 4)
+
     
 # Returns Temperature Probe input
 # Temperature Probe in FIO0, correction factor: temp x 100
@@ -37,15 +34,20 @@ def tempUpdate():
     return ((d.getAIN(0))/0.01)
 
 # Returns RH Probe input
-# RH probe in FIO1, correction factor: (RH-0.958)/0.0307
+# RH probe in FIO1, only ouputs sensor RH, not corrected for temperature
 def rhUpdate():
-    return (((d.getAIN(1))-0.958)/0.0307)
+    #return (((d.getAIN(1))-0.958)/0.0307)
+    return (d.getAIN(1)/5-0.16)/0.0062
 
 # Returns Pressure Probe (PSense) input
 # Psense in FIO2, correction factor (P-0.2)/0.045
 def pUpdate():
-    return ((d.getAIN(2)-0.2)/0.045)
+#    return ((d.getAIN(2)-0.2)/0.045)
+    return ((d.getAIN(2)-0.278)/0.045)
 
+# Voltage Monitor
+def vUpdate():
+    return(d.getAIN(6)*1000)
 
 ############################################
 
@@ -55,15 +57,16 @@ trialCount = 0
 lvl = 10   # Lower Voltage Limit #V will be 100
 uvl = 200  # Upper Voltage Limit #V will be 8000' 
 bins = 10
-pidp = 0.2*(7)        #PID Proportional Gain
-pidi = 0.4*(7)/(1.2)      #PID Integral Gain
-pidd = 0.066*(7)*(1.2)     #PID Derivative Gain
+pidp = 0.2*0.8        #PID Proportional Gain
+pidi = 0.4*0.8/0.8      #PID Integral Gain
+pidd = 0.0666*0.8*0.8     #PID Derivative Gain
 file = 'c:\\Users\\user\\Documents\\trialrun.csv'
-voltageUpdate = 100 #ms
+voltageUpdate = 1000 #ms
 blowerFlow = 5 # Set Blower Flow Rate in [LPM]
 timer = 0
 control = 0
 labjackVoltage = 0
+voltageMonitor = 0
 
 # Initalizing threads for running blower and voltage setting codes
 
@@ -74,11 +77,17 @@ v = None
 
 #Set Flow as AIN3
 def flowUpdate():
-    slpm = (d.getAIN(3)-.85)/0.2
-    tFactor = (tempUpdate()+273.15)/273.15
-    pFactor = 100/(100+pUpdate())
+    slpm = []
+    flow_measure_repeat = 0 
+    while flow_measure_repeat < 5:
+        slpm.append((d.getAIN(3)-0.9947)/0.1714)
+        tFactor = (tempUpdate()+273.15)/273.15
+        pFactor = 100/(100+pUpdate())
+        time.sleep(0.001)
+        flow_measure_repeat += 1
 #    return (slpm*tFactor*pFactor)
-    return (slpm)
+    avg_slpm = sum(slpm)/len(slpm)
+    return (avg_slpm)
     #return d.getAIN(3)
 """
 #Set Temperature Probe to AIN0
@@ -105,6 +114,10 @@ settings.pack()
 def voltageCycle_callback(): #Not sure what this one does
     global voltageCycle
     voltageCycle = not voltageCycle
+    if voltageCycle == True:
+        voltageCycle_b.config(text = "On")
+    if voltageCycle == False:
+        voltageCycle_b.config(text = "Off")
     print (voltageCycle)
 
 def lvl_callback():
@@ -117,7 +130,7 @@ def uvl_callback():
 
 def voltageUpdate_callback():
     global voltageUpdate
-    voltageUpdate = voltageUpdate_e.get()
+    voltageUpdate = float(voltageUpdate_e.get())
 
 def bins_callback():
     global bins
@@ -140,11 +153,13 @@ def onStart():
     start_b.configure(text='Stop', command=onClose)
 
     #Configure PID Controller
-    pid = PID(int(pidp), int(pidi), int(pidd), setpoint=int(blowerFlow))
-
+    pid = PID(pidp, pidi, pidd, setpoint=blowerFlow)
+    pid.output_limits = (-0.25,0.25)
 
     #Reveal the Monitoring controls
     global trialCount
+    global control
+    global labjackVoltage
     trialCount +=1
     temp_label.pack()
     temp_e.pack()
@@ -159,9 +174,13 @@ def onStart():
     def blower():
         global timer
         global trialCount
+        tdac.update(0,0)
+        time.sleep(5)
         with open(file, mode='w',newline='') as data_file:
             data_writer = csv.writer(data_file, delimiter=',')
             data_writer.writerow(['Trial Count','Timer','Temperature','Measured'])
+            
+            # Infinite Loop
             while True:
 
                 # Pause for 0.5 seconds then update timer
@@ -174,8 +193,8 @@ def onStart():
                 temp_e.delete(0, 'end')
                 temp_e.insert(0, tempRead)
 
-                # Read RH and update GUI
-                rhRead = rhUpdate()
+                # Read RH, correct for temperature and update GUI
+                rhRead = rhUpdate()/(1.0546-0.00216*tempRead)
                 rh_e.delete(0, 'end')
                 rh_e.insert(0, rhRead)
 
@@ -191,15 +210,14 @@ def onStart():
 
                 # PID Function (Fix this)
                 measured = flowUpdate()
-                control = pid(measured)
+                control = 0.016*blowerFlow + 1.8885 + pid(measured)
                 
                 # Write Data to CSV file
                 data_writer.writerow([trialCount, timer, tempRead, measured])
                 
                 #Not Sure
-                dac0_val = d.voltageToDACBits(1)
-                d.getFeedback(u3.DAC0_8(dac0_val))
-                print(d.getAIN(3))
+                tdac.update(control,0)
+                #print(control)
 
 
     #By defining a foreground function, the background process can continuously run and update its input values
@@ -208,41 +226,63 @@ def onStart():
         global lvl
         global uvl
         global bins
-        global labjackVoltage
+        global voltageUpdate
 
-        # If voltageCycle is selected
-        if voltageCycle == True:
-            voltage = int(lvl)
-            increment = ((int(uvl)-int(lvl))/int(bins))
-            labjackVoltage = voltage/2000
-            labjackIncrement = increment/2000
+        while True:
+            # If voltageCycle is selected
+            while voltageCycle == True:
+                voltage = int(lvl)
+                increment = ((int(uvl)-int(lvl))/int(bins))
+                labjackVoltage = voltage/2000
+                labjackIncrement = increment/2000
 
-            for i in range(int(bins)):
+                for i in range(int(bins)):
+                    if voltageCycle == False:
+                            break
+                    dac1_val = d.voltageToDACBits(labjackVoltage)
+                    d.getFeedback(u3.DAC1_8(dac1_val))
+                    #tdac.update(control,labjackVoltage)
+                    voltageSetPoint_e.delete(0,'end')
+                    voltageSetPoint_e.insert(0, labjackVoltage*2000)
+                    
+                    time.sleep(voltageUpdate/1000)
+                    labjackVoltage += labjackIncrement
+                    #time.sleep(voltageUpdate/1000)
+                    
+                """
+                for i in range(int(bins)):
+                    dac1_val = d.voltageToDACBits(labjackVoltage)
+                    d.getFeedback(u3.DAC1_8(dac1_val))
+                    time.sleep(voltageUpdate/1000)
+                    labjackVoltage +- labjackIncrement
+                    time.sleep(voltageUpdate/1000)
+                """
+            while voltageCycle == False:
                 dac1_val = d.voltageToDACBits(labjackVoltage)
                 d.getFeedback(u3.DAC1_8(dac1_val))
-                time.sleep(voltageUpdate/1000)
-                labjackVoltage += labjackIncrement
-                time.sleep(voltageUpdate/1000)
 
-            for i in range(int(bins)):
-                dac1_val = d.voltageToDACBits(labjackVoltage)
-                d.getFeedback(u3.DAC1_8(dac1_val))
-                time.sleep(voltageUpdate/1000)
-                labjackVoltage +- labjackIncrement
-                time.sleep(voltageUpdate/1000)
-
-        if voltageCycle == False:
-            dac0_val = d.voltageToDACBits(labjackVoltage)
-            d.getFeedback(u3.DAC0_8(dac0_val))
+    def vIn():
+        global voltageMonitor
+        while True:
+            voltageMonitor = vUpdate()
+            supplyVoltage_e.delete(0,'end')
+            supplyVoltage_e.insert(0,voltageMonitor)
+            print(voltageMonitor)
+            time.sleep(0.2)
+    
 
     #These lines actually seperate the processes to run on different threads of the processor, so they occur simultaneously
     global b
     global v
+    global m
+    
     b = threading.Thread(name = 'Blower Monitoring', target=blower)
     v = threading.Thread(name= 'High Voltage', target=hv)
-
+    m = threading.Thread(name= 'Voltage Monitor', target=vIn)
+    
     b.start()
     v.start()
+    m.start()
 
 def onClose():
     #Reconfigure Stop Button to Start Button
@@ -307,18 +347,29 @@ file_b = tk.Button(settings, text="Update", command=file_callback)
 file_e.grid(row=6,column=3)
 file_b.grid(row=6,column=4)
 
-def changeText(bool):
+"""def changeText(bool):
     v = tk.BooleanVar(root)
     v.assertEqual(bool, v.get())
     return v
 test = str(voltageCycle)
+print(test)"""
 
-voltageCycle_b = tk.Button(settings, textvariable = test , command=voltageCycle_callback)
-voltageCycle_b.grid(row=4,column=5)
+# Voltage Cycle Button
+voltageCycle_label = tk.Label(settings, text = 'Voltage Cycle').grid(row=1,column=3)
+voltageCycle_b = tk.Button(settings, text = "On" , command=voltageCycle_callback)
+voltageCycle_b.grid(row=2,column=3)
 
-voltageMonitor_label = tk.Label(settings, text = 'Current Voltage').grid(row=5,column=5)
-voltageMonitor_e = tk.Entry(settings)
-voltageMonitor_e.insert(0, labjackVoltage*2000)
+#Current Set Voltage
+voltageSetPoint_label = tk.Label(settings, text = 'Set Voltage').grid(row=3,column=5)
+voltageSetPoint_e = tk.Entry(settings)
+voltageSetPoint_e.insert(0, labjackVoltage*2000)
+voltageSetPoint_e.grid(row=4,column = 5)
+
+# Current Monitor Voltage
+supplyVoltage_label = tk.Label(settings, text = 'Supply Voltage').grid(row=5,column=5)
+supplyVoltage_e = tk.Entry(settings)
+supplyVoltage_e.insert(0, voltageMonitor)
+supplyVoltage_e.grid(row=6,column=5)
 
 # Start Button
 start_b = tk.Button(settings, text="Run", command=onStart)
