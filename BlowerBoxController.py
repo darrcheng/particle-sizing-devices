@@ -61,6 +61,7 @@ def flowUpdate():
 ####################Default Variable Settings####################
 # General Settings
 file = 'c:\\Users\\user\\Documents\\trialrun.csv'   # File Name
+stopThreads =False                                  # Bool to help close program
 timer = 0
 
 # Flow Settings
@@ -69,6 +70,13 @@ pidi = 0                                  # PID Integral Gain
 pidd = 0                               # PID Derivative Gain
 control = 0                                         # PID Output
 blowerFlow = 5                                      # Set Blower Flow Rate in [LPM]
+
+# Flow Measurement Variables
+measured = 0                                        # Measured flow rate
+rhRead = 0                                          # Measured relative humidity
+tempRead = 0                                        # Measured temperature
+pRead = 0                                           # Measured pressure
+
 
 '''# Flow Settings
 pidp = 0.2*0.8                                      # PID Proportional Gain
@@ -167,33 +175,34 @@ def onStart():
 
     # Controls the blower with PID code to ensure the flow rate stays at the specified flow rate
     def blower():
-        global timer
+        global tempRead
+        global rhRead
+        global pRead
+        global measured
 
-        # Set flow to 0 LPM
+        # Set flow to 0 LPM and pause to allow blower to slow down
         tdac.update(0,0)
         time.sleep(5)
-        flow_time = start_time
-        flow_elapsed = 0
 
-        # Open CSV logging file
-        with open(file, mode='w',newline='') as data_file:
-            data_writer = csv.writer(data_file, delimiter=',')
-            data_writer.writerow(['Timer','Flow Rate [LPM]','Set Voltage [V]','Actual Voltage[V]','Temperature [C]','RH[%]','Pressure[kPa]'])
-            
-            # Infinite Loop
-            while True:
-                # Pause for 0.5 seconds then update timer
-                # (Fix: Pull Date Time instead of arbritary time)
-                time.sleep (0.05)
-                timer += 0.2
-                            #Pause until next date time increment is reached
+        # Constants for flow intervals
+        flow_time = datetime.now()
+        flow_count = 0
+
+        # Infinite Loop
+        while True:
+            try:
+                # Break out of loop on close
+                if stopThreads == True:
+                    print(1)
+                    break
+
+                # Pause for 0.2 seconds 
                 flow_milliseconds = 0
-                while flow_milliseconds < 500:
+                while flow_milliseconds < 200:
                     flow_time_new = datetime.now()
-                    flow_milliseconds = int((flow_time_new - flow_time).total_seconds()*1000)
-                flow_elapsed += float((flow_time_new - flow_time).total_seconds())
-                flow_time = flow_time_new
-
+                    flow_milliseconds = int((flow_time_new - flow_time).total_seconds()*1000)-flow_count*200
+                    time.sleep(0.001)
+                flow_count += 1            
 
                 # Read temperature and update GUI
                 tempRead = tempUpdate()
@@ -219,10 +228,9 @@ def onStart():
                 measured = flowUpdate()
                 control = 0.016*blowerFlow + 1.8885 + pid(measured)
                 tdac.update(control,0)
-                
-                # Write Data to CSV file
-                data_writer.writerow([flow_time,flow_elapsed,measured,labjackVoltage*voltageFactor,voltageMonitor,tempRead,rhRead,pRead])
-            
+            except BaseException:
+                print(9)
+                break
 
     # Controls the DMA voltage scanning
     def hv():
@@ -232,60 +240,160 @@ def onStart():
         global voltageUpdate
         global labjackVoltage
 
+        # Set variables based on GUI inputs
+        voltage = int(lvl)
+        increment = ((int(uvl)-int(lvl))/int(bins))
+        labjackVoltage = voltage/voltageFactor
+        labjackIncrement = increment/voltageFactor
+
         while True:
+            try:
+                # Break out of loop on close
+                if stopThreads == True:
+                    print(2)
+                    break
 
-            # If voltageCycle is on, cycle through voltages
-            while voltageCycle == True:
-                # Set variables based on GUI inputs
-                voltage = int(lvl)
-                increment = ((int(uvl)-int(lvl))/int(bins))
-                labjackVoltage = voltage/voltageFactor
-                labjackIncrement = increment/voltageFactor
+                # If voltageCycle is on, cycle through voltages
+                while voltageCycle == True:
+                    # Break out of loop on close
+                    if stopThreads == True:
+                        print(3)
+                        break
 
-                # Loop through voltages between upper and lower limits
-                for i in range(int(bins)):
-                    # Stop cycle at current voltage if voltage cycle is turned off
-                    if voltageCycle == False:
+                    # Constants for voltage intervals
+                    voltage_time = datetime.now()
+                    voltage_count = 0
+
+                    # Reset Labjack Voltage
+                    labjackVoltage = 0
+
+                    # Loop through voltages between upper and lower limits
+                    for i in range(int(bins)):
+                        # Break out of loop on close
+                        if stopThreads == True:
+                            print(4)
                             break
+                        
+                        # Stop cycle at current voltage if voltage cycle is turned off
+                        if voltageCycle == False:
+                            break
+                        
+                        # Set Voltage to Labjack and update GUI
+                        dac1_val = d.voltageToDACBits(labjackVoltage)
+                        d.getFeedback(u3.DAC1_8(dac1_val))
+                        voltageSetPoint_e.delete(0,'end')
+                        voltageSetPoint_e.insert(0, labjackVoltage*voltageFactor)
+
+                        # Pause for time specified in GUI
+                        voltage_milliseconds = 0
+                        while voltage_milliseconds < voltageUpdate:
+                            voltage_time_new = datetime.now()
+                            voltage_milliseconds = int((voltage_time_new - voltage_time).total_seconds()*1000)-voltage_count*1000
+                            time.sleep(0.001)
+                        voltage_count += 1
+
+                        labjackVoltage += labjackIncrement
+
+                # If voltage cycle is turned off, set HV supply to paused voltage        
+                while voltageCycle == False:
+                    # Break out of loop on close
+                    if stopThreads == True:
+                        print(3)
+                        break
                     
-                    #Set Voltage to Labjack and update GUI
+                    # Send voltage to Labjack
                     dac1_val = d.voltageToDACBits(labjackVoltage)
                     d.getFeedback(u3.DAC1_8(dac1_val))
-                    voltageSetPoint_e.delete(0,'end')
-                    voltageSetPoint_e.insert(0, labjackVoltage*voltageFactor)
-                    
-                    #Pause then increment
-                    time.sleep(voltageUpdate/1000)
-                    labjackVoltage += labjackIncrement
-
-            # If voltage cycle is turned off, set HV supply to paused voltage        
-            while voltageCycle == False:
-                dac1_val = d.voltageToDACBits(labjackVoltage)
-                d.getFeedback(u3.DAC1_8(dac1_val))
+            
+            except BaseException:
+                print(9)
+                break
 
     # Define Voltage Monitor
     def vIn():
         global voltageMonitor
+        
+        # Constants for voltage monitoring intervals
+        monitor_time = datetime.now()
+        monitor_count = 0
+        
         while True:
-            # Read in HV supply voltage and update GUI
-            voltageMonitor = vUpdate()
-            supplyVoltage_e.delete(0,'end')
-            supplyVoltage_e.insert(0,voltageMonitor)
+            try:
+                # Break out of loop on program close
+                if stopThreads == True:
+                    print(5)
+                    break
+                
+                # Pause for 0.2 seconds 
+                monitor_milliseconds = 0
+                while monitor_milliseconds < 200:
+                    monitor_time_new = datetime.now()
+                    monitor_milliseconds = int((monitor_time_new - monitor_time).total_seconds()*1000)-monitor_count*200
+                    time.sleep(0.001)
+                monitor_count += 1
 
-            time.sleep(0.2)
+                # Read in HV supply voltage and update GUI
+                voltageMonitor = vUpdate()
+                supplyVoltage_e.delete(0,'end')
+                supplyVoltage_e.insert(0,voltageMonitor)
 
+            except BaseException:
+                print(9)
+                break
+
+    def dataLogging():
+        # Open CSV logging file
+        with open(file, mode='w',newline='') as data_file:
+            data_writer = csv.writer(data_file, delimiter=',')
+            data_writer.writerow(['Count','Timer','Elapsed Time','Flow Rate [LPM]','Set Voltage [V]',
+            'Actual Voltage[V]','Temperature [C]','RH[%]','Pressure[kPa]'])
+        
+            log_time = start_time
+            log_elapsed = 0
+            count = 0
+            # Infinite Loop
+            while True:
+                try:
+                    # Break out of loop on program close                
+                    if stopThreads == True:
+                        print(6)
+                        break
+
+                    # Pause until next date time increment is reached
+                    log_milliseconds = 0
+                    while log_milliseconds < 500:
+                        log_time_new = datetime.now()
+                        log_milliseconds = int((log_time_new - start_time).total_seconds()*1000)-count*500
+                        time.sleep (0.05)
+                    log_elapsed += float((log_time_new - log_time).total_seconds())
+                    count += 1
+                    log_time = log_time_new
+
+                    # Write Data to CSV file
+                    data_writer.writerow([count,log_time,log_elapsed,measured,labjackVoltage*voltageFactor,
+                    voltageMonitor,tempRead,rhRead,pRead])
+                
+                except BaseException:
+                    print(9)
+                    break
+    
     # Define and start threads
     global b; b = threading.Thread(name = 'Blower Monitoring', target=blower)
     global v; v = threading.Thread(name= 'High Voltage', target=hv)
     global m; m = threading.Thread(name= 'Voltage Monitor', target=vIn)
+    global l; l = threading.Thread(name = 'Data Logging', target=dataLogging)
     b.start()
     v.start()
     m.start()
+    l.start()
 
+# Close Program
 def onClose():
-    #Reconfigure Stop Button to Start Button
+    # Reconfigure Stop Button to Start Button
     start_b.configure(text='Run', command=onStart)
-
+    
+    # Stop threads, close Labjack and Tkinter GUI
+    global stopThreads; stopThreads = True
     global d
     d.close()
     runtime.destroy()
@@ -355,7 +463,7 @@ voltageCycle_label = tk.Label(settings, text = 'Voltage Cycle').grid(row=1,colum
 voltageCycle_b = tk.Button(settings, text = "On" , command=voltageCycle_callback)
 voltageCycle_b.grid(row=2,column=3)
 
-#Current Set Voltage
+# Current Set Voltage
 voltageSetPoint_label = tk.Label(settings, text = 'Set Voltage').grid(row=3,column=5)
 voltageSetPoint_e = tk.Entry(settings)
 voltageSetPoint_e.insert(0, labjackVoltage*voltageFactor)
@@ -385,7 +493,7 @@ rh_e = tk.Entry(runtime)
 p_label = tk.Label(runtime, text = 'Pressure')
 p_e = tk.Entry(runtime)
 
-#Define flow rate label
+# Define flow rate label
 flow_label = tk.Label(runtime, text = 'Flow sLPM')
 flow_e = tk.Entry(runtime)
 
