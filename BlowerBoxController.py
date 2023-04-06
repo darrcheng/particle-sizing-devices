@@ -4,53 +4,73 @@ import time
 from datetime import datetime #Pulls current time from system
 from datetime import timedelta #Calculates difference in time
 from tkinter.constants import FALSE
-import u3
-from LJTick import LJTickDAC
+# import u3
+# from LJTick import LJTickDAC
+from labjack import ljm
 from simple_pid import PID
 import threading
-d = u3.U3()
+# d = u3.U3()
 
 ####################Labjack Startup####################
-# Initalize Labjack U3
-d.getCalibrationData()
-dac0_val = d.voltageToDACBits(2.2, dacNumber=0, is16Bits= False)
-d.getFeedback(u3.DAC0_8(dac0_val))
+# # Initalize Labjack U3
+# d.getCalibrationData()
+# d.configIO( FIOAnalog=1)
+# d.configIO( EIOAnalog=255)
+# # dac0_val = d.voltageToDACBits(2.2, dacNumber=0, is16Bits= False)
+# # d.getFeedback(u3.DAC0_8(dac0_val))
 
-# Define LJTick DAC as set in FIO4
-tdac = LJTickDAC(d, 4)
+# # Define LJTick DAC as set in EIO4
+# tdac_flow = LJTickDAC(d, 12)
+# tdac_voltage = LJTickDAC(d,14)
 
 # Set HV Supply to 0V
-dac1_val = d.voltageToDACBits(0)
-d.getFeedback(u3.DAC1_8(dac1_val))
+# dac1_val = d.voltageToDACBits(0)
+# d.getFeedback(u3.DAC1_8(dac1_val))
+
+handle = ljm.openS("T7","ANY","ANY")
+info = ljm.getHandleInfo(handle)
+ljm.eWriteName(handle,'AIN1_RANGE',1.0)
 
 ####################Labjack Read Functions####################
 # Returns Temperature Probe input
 # Temperature Probe in FIO0, correction factor: temp x 100
 def tempUpdate():
-    return ((d.getAIN(7))/0.01)
+    return(ljm.eReadName(handle, temp_input)/0.01)
+    # return ((d.getAIN(11))/0.01)
 
 # Returns RH Probe input
 # RH probe in FIO1, only ouputs sensor RH, not corrected for temperature
 def rhUpdate():
-    #return (((d.getAIN(1))-0.958)/0.0307)
-    return (d.getAIN(1)/5-0.16)/0.0062
+    #return (((d.getAIN(8))-0.958)/0.0307)
+    return(ljm.eReadName(handle, rh_input)/5-0.16)/0.0062
+    # return (d.getAIN(8)/5-0.16)/0.0062
 
 # Returns Pressure Probe (PSense) input
 # Psense in FIO2, correction factor (P-0.2)/0.045
 def pUpdate():
-#    return ((d.getAIN(2)-0.2)/0.045)
-    return ((d.getAIN(2)-0.278)/0.045)
+#    return ((d.getAIN(9)-0.2)/0.045)
+    return((ljm.eReadName(handle, press_input)-0.278)/0.045)
+    # return ((d.getAIN(9)-0.278)/0.045)
 
 # Returns HV Supply Voltage
 def vUpdate():
-    return(d.getAIN(0)*1000)
+    voltage = []
+    voltage_measure_repeat = 0 
+    while voltage_measure_repeat < 5:
+        voltage.append(ljm.eReadName(handle, voltage_monitor_input)*1000)
+        # voltage.append(d.getAIN(10)*1000)
+        time.sleep(0.001)
+        voltage_measure_repeat += 1
+    avg_voltage = sum(voltage)/len(voltage)
+    return (avg_voltage)
 
 # Returns Flow Reading (Averaged over 5 readings, 1ms apart)
 def flowUpdate():
     slpm = []
     flow_measure_repeat = 0 
     while flow_measure_repeat < 5:
-        slpm.append((d.getAIN(3)-0.9947)/0.1714)
+        slpm.append((ljm.eReadName(handle, flow_read_input)-0.9947)/0.1714)
+        # slpm.append((d.getAIN(3)-0.9947)/0.1714)
         tFactor = (tempUpdate()+273.15)/273.15
         pFactor = 100/(100+pUpdate())
         time.sleep(0.001)
@@ -69,7 +89,7 @@ pidp = 0.2                                      # PID Proportional Gain
 pidi = 0                                  # PID Integral Gain
 pidd = 0                               # PID Derivative Gain
 control = 0                                         # PID Output
-blowerFlow = 5                                      # Set Blower Flow Rate in [LPM]
+blowerFlow = 15                                      # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
 measured = 0                                        # Measured flow rate
@@ -91,16 +111,24 @@ voltageCycle = True                                 # Turn voltage cycling on an
 lvl = 10                                            # Lower Voltage Limit #V will be 100
 uvl = 200                                           # Upper Voltage Limit #V will be 8000' 
 bins = 10                                           # Number of steps in voltage cycle
-voltageUpdate = 1000                                # Time between each voltage step
+voltageUpdate = 5000                                # Time between each voltage step
 labjackVoltage = 0                                  # Labjack output to control HV supply
 voltageMonitor = 0                                  # Current voltage read from HV supply monitor
-voltageFactor = 10000/4.64                          # Scaling for HV Supply
+voltageFactor = 10000/5                          # Scaling for HV Supply
 
 # Initalizing threads for running blower and voltage setting codes
 b = None        # Bloewr Control
 v = None        # Voltage Set
 m = None        # Voltage Monitor
 
+# Labjack Inputs
+flow_read_input = "AIN0"
+voltage_monitor_input = "AIN1"
+press_input = "AIN2"
+temp_input = "AIN3"
+rh_input = "AIN4"
+voltage_set_ouput = "DAC0"
+flow_set_output = "TDAC0"
 
 ####################TKinter Button Functions####################
 # Define callback function for update button in Tkinter GUI
@@ -181,7 +209,8 @@ def onStart():
         global measured
 
         # Set flow to 0 LPM and pause to allow blower to slow down
-        tdac.update(0,0)
+        # tdac_flow.update(0,0)
+        ljm.eWriteName(handle,flow_set_output, 0)
         time.sleep(5)
 
         # Constants for flow intervals
@@ -227,7 +256,8 @@ def onStart():
                 # PID Function 
                 measured = flowUpdate()
                 control = 0.016*blowerFlow + 1.8885 + pid(measured)
-                tdac.update(control,0)
+                # tdac_flow.update(control,0)
+                ljm.eWriteName(handle,flow_set_output,control)
             except BaseException:
                 print(9)
                 break
@@ -243,6 +273,7 @@ def onStart():
         # Set variables based on GUI inputs
         voltage = int(lvl)
         increment = ((int(uvl)-int(lvl))/int(bins))
+        print(increment)
         labjackVoltage = voltage/voltageFactor
         labjackIncrement = increment/voltageFactor
 
@@ -279,8 +310,11 @@ def onStart():
                             break
                         
                         # Set Voltage to Labjack and update GUI
-                        dac1_val = d.voltageToDACBits(labjackVoltage)
-                        d.getFeedback(u3.DAC1_8(dac1_val))
+                        # dac1_val = d.voltageToDACBits(labjackVoltage)
+                        # d.getFeedback(u3.DAC1_8(dac1_val))
+                        # tdac_voltage.update(labjackVoltage,0)
+                        ljm.eWriteName(handle,voltage_set_ouput, labjackVoltage)
+                        print(labjackVoltage)
                         voltageSetPoint_e.delete(0,'end')
                         voltageSetPoint_e.insert(0, labjackVoltage*voltageFactor)
 
@@ -288,9 +322,10 @@ def onStart():
                         voltage_milliseconds = 0
                         while voltage_milliseconds < voltageUpdate:
                             voltage_time_new = datetime.now()
-                            voltage_milliseconds = int((voltage_time_new - voltage_time).total_seconds()*1000)-voltage_count*1000
+                            voltage_milliseconds = int((voltage_time_new - voltage_time).total_seconds()*1000)-voltage_count*voltageUpdate
                             time.sleep(0.001)
                         voltage_count += 1
+                        print(voltage_milliseconds)
 
                         labjackVoltage += labjackIncrement
 
@@ -337,8 +372,8 @@ def onStart():
                 supplyVoltage_e.delete(0,'end')
                 supplyVoltage_e.insert(0,voltageMonitor)
 
-            except BaseException:
-                print(9)
+            except BaseException as e:
+                print(e)
                 break
 
     def dataLogging():
@@ -394,8 +429,8 @@ def onClose():
     
     # Stop threads, close Labjack and Tkinter GUI
     global stopThreads; stopThreads = True
-    global d
-    d.close()
+    # global d
+    # d.close()
     runtime.destroy()
 
 ####################GUI Creation####################
