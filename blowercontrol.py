@@ -70,6 +70,7 @@ def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blow
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)
 
             # Schedule the next update
+            curr_time = curr_time + flow_update_time
             next_time = curr_time + flow_update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0

@@ -26,7 +26,7 @@ ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 
 ####################Default Variable Settings####################
 # General Settings
-file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
+file = "C:\\Users\\Jen Lab\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
 timer = 0
 
@@ -407,7 +407,11 @@ def onStart():
 
     # Define and start threads
     global b
-    b = threading.Thread(name="Blower Monitoring", target=blower)
+    b = threading.Thread(
+        name="Blower Monitoring",
+        target=blower,
+        args=(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blowerFlow),
+    )
     global v
     v = threading.Thread(name="High Voltage", target=hv)
     global m
