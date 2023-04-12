@@ -2,22 +2,15 @@ import tkinter as tk
 import csv
 import time
 from datetime import datetime  # Pulls current time from system
-from datetime import timedelta  # Calculates difference in time
 from tkinter.constants import FALSE
-# import u3
-# from LJTick import LJTickDAC
 from labjack import ljm
 from simple_pid import PID
 import threading
-# d = u3.U3()
+from sensors import *
+from blowercontrol import *
+
 
 ####################Labjack Startup####################
-# # Initalize Labjack U3
-# d.getCalibrationData()
-# d.configIO( FIOAnalog=1)
-# d.configIO( EIOAnalog=255)
-# # dac0_val = d.voltageToDACBits(2.2, dacNumber=0, is16Bits= False)
-# # d.getFeedback(u3.DAC0_8(dac0_val))
 
 # # Define LJTick DAC as set in EIO4
 # tdac_flow = LJTickDAC(d, 12)
@@ -27,70 +20,22 @@ import threading
 # dac1_val = d.voltageToDACBits(0)
 # d.getFeedback(u3.DAC1_8(dac1_val))
 
-handle = ljm.openS("T7","ANY","ANY")
+handle = ljm.openS("T7", "ANY", "ANY")
 info = ljm.getHandleInfo(handle)
-ljm.eWriteName(handle,'AIN1_RANGE',1.0)
-
-####################Labjack Read Functions####################
-# Returns Temperature Probe input
-# Temperature Probe in FIO0, correction factor: temp x 100
-def tempUpdate():
-    return(ljm.eReadName(handle, temp_input)/0.01)
-    # return ((d.getAIN(11))/0.01)
-
-# Returns RH Probe input
-# RH probe in FIO1, only ouputs sensor RH, not corrected for temperature
-def rhUpdate():
-    #return (((d.getAIN(8))-0.958)/0.0307)
-    return(ljm.eReadName(handle, rh_input)/5-0.16)/0.0062
-    # return (d.getAIN(8)/5-0.16)/0.0062
-
-# Returns Pressure Probe (PSense) input
-# Psense in FIO2, correction factor (P-0.2)/0.045
-def pUpdate():
-#    return ((d.getAIN(9)-0.2)/0.045)
-    return((ljm.eReadName(handle, press_input)-0.278)/0.045)
-    # return ((d.getAIN(9)-0.278)/0.045)
-
-# Returns HV Supply Voltage
-def vUpdate():
-    voltage = []
-    voltage_measure_repeat = 0 
-    while voltage_measure_repeat < 5:
-        voltage.append(ljm.eReadName(handle, voltage_monitor_input)*1000)
-        # voltage.append(d.getAIN(10)*1000)
-        time.sleep(0.001)
-        voltage_measure_repeat += 1
-    avg_voltage = sum(voltage)/len(voltage)
-    return (avg_voltage)
-
-# Returns Flow Reading (Averaged over 5 readings, 1ms apart)
-def flowUpdate():
-    slpm = []
-    flow_measure_repeat = 0
-    while flow_measure_repeat < 5:
-        slpm.append((ljm.eReadName(handle, flow_read_input)-0.9947)/0.1714)
-        # slpm.append((d.getAIN(3)-0.9947)/0.1714)
-        tFactor = (tempUpdate()+273.15)/273.15
-        pFactor = 100/(100+pUpdate())
-        time.sleep(0.001)
-        flow_measure_repeat += 1
-    avg_slpm = sum(slpm) / len(slpm)
-    return avg_slpm
-
+ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 
 ####################Default Variable Settings####################
 # General Settings
-file = "c:\\Users\\user\\Documents\\trialrun.csv"  # File Name
+file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
 timer = 0
 
 # Flow Settings
-pidp = 0.2                                      # PID Proportional Gain
-pidi = 0                                  # PID Integral Gain
-pidd = 0                               # PID Derivative Gain
-control = 0                                         # PID Output
-blowerFlow = 15                                      # Set Blower Flow Rate in [LPM]
+pidp = 0.2  # PID Proportional Gain
+pidi = 0  # PID Integral Gain
+pidd = 0  # PID Derivative Gain
+control = 0  # PID Output
+blowerFlow = 15  # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
 measured = 0  # Measured flow rate
@@ -98,31 +43,22 @@ rhRead = 0  # Measured relative humidity
 tempRead = 0  # Measured temperature
 pRead = 0  # Measured pressure
 
-
-"""# Flow Settings
-pidp = 0.2*0.8                                      # PID Proportional Gain
-pidi = 0.4*0.8/0.8                                  # PID Integral Gain
-pidd = 0.0666*0.8*0.8                               # PID Derivative Gain
-control = 0                                         # PID Output
-blowerFlow = 5                                      # Set Blower Flow Rate in [LPM]
-"""
-
 # Voltage Cycle Settings
-voltageCycle = True                                 # Turn voltage cycling on and off
-lvl = 10                                            # Lower Voltage Limit #V will be 100
-uvl = 200                                           # Upper Voltage Limit #V will be 8000' 
-bins = 10                                           # Number of steps in voltage cycle
-voltageUpdate = 5000                                # Time between each voltage step
-labjackVoltage = 0                                  # Labjack output to control HV supply
-voltageMonitor = 0                                  # Current voltage read from HV supply monitor
-voltageFactor = 10000/5                          # Scaling for HV Supply
+voltageCycle = True  # Turn voltage cycling on and off
+lvl = 10  # Lower Voltage Limit #V will be 100
+uvl = 200  # Upper Voltage Limit #V will be 8000'
+bins = 10  # Number of steps in voltage cycle
+voltageUpdate = 5000  # Time between each voltage step
+labjackVoltage = 0  # Labjack output to control HV supply
+voltageMonitor = 0  # Current voltage read from HV supply monitor
+voltageFactor = 10000 / 5  # Scaling for HV Supply
 
 # Initalizing threads for running blower and voltage setting codes
 b = None  # Bloewr Control
 v = None  # Voltage Set
 m = None  # Voltage Monitor
 
-# Labjack Inputs
+# # Labjack Inputs
 flow_read_input = "AIN0"
 voltage_monitor_input = "AIN1"
 press_input = "AIN2"
@@ -130,6 +66,17 @@ temp_input = "AIN3"
 rh_input = "AIN4"
 voltage_set_ouput = "DAC0"
 flow_set_output = "TDAC0"
+
+labjack_io = {
+    "flow_read_input": "AIN0",
+    "voltage_monitor_input": "AIN1",
+    "press_input": "AIN2",
+    "temp_input": "AIN3",
+    "rh_input": "AIN4",
+    "voltage_set_output": "DAC0",
+    "flow_set_output": "TDAC0",
+}
+
 
 ####################TKinter Button Functions####################
 # Define callback function for update button in Tkinter GUI
@@ -186,11 +133,11 @@ def file_callback():
 
 
 def onStart():
-
     # Reconfigure Start Button to Stop Button
     start_b.configure(text="Stop", command=onClose)
 
     # Configure PID Controller
+    global pid
     pid = PID(pidp, pidi, pidd, setpoint=blowerFlow)
     pid.output_limits = (-0.25, 0.25)
 
@@ -210,70 +157,72 @@ def onStart():
     flow_label.pack()
     flow_e.pack()
 
-    # Controls the blower with PID code to ensure the flow rate stays at the specified flow rate
-    def blower():
-        global tempRead
-        global rhRead
-        global pRead
-        global measured
+    # # Controls the blower with PID code to ensure the flow rate stays at the specified flow rate
+    # def blower():
+    #     global tempRead
+    #     global rhRead
+    #     global pRead
+    #     global measured
 
-        # Set flow to 0 LPM and pause to allow blower to slow down
-        # tdac_flow.update(0,0)
-        ljm.eWriteName(handle,flow_set_output, 0)
-        time.sleep(5)
+    #     # Set flow to 0 LPM and pause to allow blower to slow down
+    #     # tdac_flow.update(0,0)
+    #     ljm.eWriteName(handle, flow_set_output, 0)
+    #     time.sleep(5)
 
-        # Constants for flow intervals
-        flow_time = datetime.now()
-        flow_count = 0
-        flow_update_time = 200  # milliseconds
+    #     # Constants for flow intervals
+    #     flow_time = datetime.now()
+    #     flow_count = 0
+    #     flow_update_time = 200  # milliseconds
 
-        # Infinite Loop
-        while True:
-            try:
-                # Break out of loop on close
-                if stopThreads == True:
-                    print(1)
-                    break
+    #     # Infinite Loop
+    #     while True:
+    #         try:
+    #             # Break out of loop on close
+    #             if stopThreads == True:
+    #                 print("Shutdown: Sheath Flow Sensors")
+    #                 break
 
-                # Pause for 0.2 seconds
-                flow_milliseconds = 0
-                while flow_milliseconds < flow_update_time:
-                    flow_time_new = datetime.now()
-                    flow_milliseconds = (
-                        int((flow_time_new - flow_time).total_seconds() * 1000)
-                        - flow_count * flow_update_time
-                    )
-                    time.sleep(0.001)
-                flow_count += 1
+    #             # Pause until time to start next iteration
+    #             flow_milliseconds = 0
+    #             while flow_milliseconds < flow_update_time:
+    #                 flow_time_new = datetime.now()
+    #                 flow_milliseconds = (
+    #                     int((flow_time_new - flow_time).total_seconds() * 1000)
+    #                     - flow_count * flow_update_time
+    #                 )
+    #                 time.sleep(0.001)
+    #             flow_count += 1
 
-                # Read temperature and update GUI
-                tempRead = tempUpdate()
-                temp_e.delete(0, "end")
-                temp_e.insert(0, tempRead)
+    #             # Read temperature and update GUI
+    #             tempRead = temp_update(handle, temp_input)
+    #             temp_e.delete(0, "end")
+    #             temp_e.insert(0, tempRead)
 
-                # Read RH, correct for temperature and update GUI
-                rhRead = rhUpdate() / (1.0546 - 0.00216 * tempRead)
-                rh_e.delete(0, "end")
-                rh_e.insert(0, rhRead)
+    #             # Read RH, correct for temperature and update GUI
+    #             rhRead = rh_update(handle, rh_input) / (1.0546 - 0.00216 * tempRead)
+    #             rh_e.delete(0, "end")
+    #             rh_e.insert(0, rhRead)
 
-                # Read Pressure and update GUI
-                pRead = pUpdate()
-                p_e.delete(0, "end")
-                p_e.insert(0, pRead)
+    #             # Read Pressure and update GUI
+    #             pRead = press_update(handle, press_input)
+    #             p_e.delete(0, "end")
+    #             p_e.insert(0, pRead)
 
-                # Read Flow Rate and update GUI
-                flowRead = flowUpdate()
-                flow_e.delete(0, "end")
-                flow_e.insert(0, flowRead)
+    #             # Read Flow Rate and update GUI
+    #             flowRead = flow_update(handle, flow_read_input)
+    #             flow_e.delete(0, "end")
+    #             flow_e.insert(0, flowRead)
 
-                # PID Function
-                measured = flowUpdate()
-                control = 0.016*blowerFlow + 1.8885 + pid(measured)
-                # tdac_flow.update(control,0)
-                ljm.eWriteName(handle,flow_set_output,control)
-            except BaseException:
-                print(9)
-                break
+    #             # PID Function
+    #             measured = flow_update(handle, flow_read_input)
+    #             control = 0.016 * blowerFlow + 1.8885 + pid(measured)
+
+    #             # Set blower voltage
+    #             ljm.eWriteName(handle, flow_set_output, control)
+
+    #         except BaseException:
+    #             print("Sheath Flow Sensor Error")
+    #             break
 
     # Controls the DMA voltage scanning
     def hv():
@@ -285,10 +234,10 @@ def onStart():
 
         # Set variables based on GUI inputs
         voltage = int(lvl)
-        increment = ((int(uvl)-int(lvl))/int(bins))
+        increment = (int(uvl) - int(lvl)) / int(bins)
         print(increment)
-        labjackVoltage = voltage/voltageFactor
-        labjackIncrement = increment/voltageFactor
+        labjackVoltage = voltage / voltageFactor
+        labjackIncrement = increment / voltageFactor
 
         while True:
             try:
@@ -326,16 +275,19 @@ def onStart():
                         # dac1_val = d.voltageToDACBits(labjackVoltage)
                         # d.getFeedback(u3.DAC1_8(dac1_val))
                         # tdac_voltage.update(labjackVoltage,0)
-                        ljm.eWriteName(handle,voltage_set_ouput, labjackVoltage)
+                        ljm.eWriteName(handle, voltage_set_ouput, labjackVoltage)
                         print(labjackVoltage)
-                        voltageSetPoint_e.delete(0,'end')
-                        voltageSetPoint_e.insert(0, labjackVoltage*voltageFactor)
+                        voltageSetPoint_e.delete(0, "end")
+                        voltageSetPoint_e.insert(0, labjackVoltage * voltageFactor)
 
                         # Pause for time specified in GUI
                         voltage_milliseconds = 0
                         while voltage_milliseconds < voltageUpdate:
                             voltage_time_new = datetime.now()
-                            voltage_milliseconds = int((voltage_time_new - voltage_time).total_seconds()*1000)-voltage_count*voltageUpdate
+                            voltage_milliseconds = (
+                                int((voltage_time_new - voltage_time).total_seconds() * 1000)
+                                - voltage_count * voltageUpdate
+                            )
                             time.sleep(0.001)
                         voltage_count += 1
                         print(voltage_milliseconds)
@@ -350,8 +302,9 @@ def onStart():
                         break
 
                     # Send voltage to Labjack
-                    dac1_val = d.voltageToDACBits(labjackVoltage)
-                    d.getFeedback(u3.DAC1_8(dac1_val))
+                    # dac1_val = d.voltageToDACBits(labjackVoltage)
+                    # d.getFeedback(u3.DAC1_8(dac1_val))
+                    ljm.eWriteName(handle, voltage_set_ouput, labjackVoltage)
 
             except BaseException:
                 print(9)
@@ -384,7 +337,7 @@ def onStart():
                 monitor_count += 1
 
                 # Read in HV supply voltage and update GUI
-                voltageMonitor = vUpdate()
+                voltageMonitor = hv_update(handle, voltage_monitor_input)
                 supplyVoltage_e.delete(0, "end")
                 supplyVoltage_e.insert(0, voltageMonitor)
 
@@ -426,8 +379,7 @@ def onStart():
                     while log_milliseconds < 500:
                         log_time_new = datetime.now()
                         log_milliseconds = (
-                            int((log_time_new - start_time).total_seconds() * 1000)
-                            - count * 500
+                            int((log_time_new - start_time).total_seconds() * 1000) - count * 500
                         )
                         time.sleep(0.05)
                     log_elapsed += float((log_time_new - log_time).total_seconds())
@@ -474,7 +426,8 @@ def onClose():
     start_b.configure(text="Run", command=onStart)
 
     # Stop threads, close Labjack and Tkinter GUI
-    global stopThreads; stopThreads = True
+    global stopThreads
+    stopThreads = True
     # global d
     # d.close()
     runtime.destroy()
@@ -517,9 +470,7 @@ bins_e.grid(row=2, column=1)
 bins_b.grid(row=2, column=2)
 
 # Voltage Update
-voltageUpdate_label = tk.Label(settings, text="Voltage Update Time (ms)").grid(
-    row=2, column=4
-)
+voltageUpdate_label = tk.Label(settings, text="Voltage Update Time (ms)").grid(row=2, column=4)
 voltageUpdate_e = tk.Entry(settings)
 voltageUpdate_e.insert(0, voltageUpdate)
 voltageUpdate_b = tk.Button(settings, text="Update", command=voltageUpdate_callback)
@@ -527,9 +478,7 @@ voltageUpdate_e.grid(row=2, column=5)
 voltageUpdate_b.grid(row=2, column=6)
 
 # Blower Flow Rate
-blowerFlow_label = tk.Label(settings, text="Blower Flow Rate (L/min)").grid(
-    row=3, column=3
-)
+blowerFlow_label = tk.Label(settings, text="Blower Flow Rate (L/min)").grid(row=3, column=3)
 blowerFlow_e = tk.Entry(settings)
 blowerFlow_e.insert(0, blowerFlow)
 blowerFlow_b = tk.Button(settings, text="Update", command=blowerFlow_callback)
@@ -537,9 +486,7 @@ blowerFlow_e.grid(row=4, column=3)
 blowerFlow_b.grid(row=4, column=4)
 
 # File Location
-data_storage_label = tk.Label(settings, text="Data Storage (File Location)").grid(
-    row=5, column=3
-)
+data_storage_label = tk.Label(settings, text="Data Storage (File Location)").grid(row=5, column=3)
 file_e = tk.Entry(settings)
 file_e.insert(0, file)
 file_b = tk.Button(settings, text="Update", command=file_callback)
