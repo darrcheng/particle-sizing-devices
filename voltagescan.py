@@ -10,7 +10,6 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
     # Set variables based on GUI inputs
     voltage = int(settings.lvl)
     increment = (int(settings.uvl) - int(settings.lvl)) / int(settings.bins)
-    # print(increment)
     labjackVoltage = voltage / settings.voltageFactor
     labjackIncrement = increment / settings.voltageFactor
 
@@ -54,18 +53,6 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
                     ljm.eWriteName(handle, labjack_io["voltage_set_output"], labjackVoltage)
                     voltageSetPoint_e.delete(0, "end")
                     voltageSetPoint_e.insert(0, labjackVoltage * settings.voltageFactor)
-
-                    # # Pause for time specified in GUI
-                    # voltage_milliseconds = 0
-                    # while voltage_milliseconds < settings.voltageUpdate:
-                    #     voltage_time_new = datetime.now()
-                    #     voltage_milliseconds = (
-                    #         int((voltage_time_new - voltage_time).total_seconds() * 1000)
-                    #         - voltage_count * settings.voltageUpdate
-                    #     )
-                    #     time.sleep(0.001)
-                    # voltage_count += 1
-                    # print(voltage_milliseconds)
 
                     # Schedule the next update
                     curr_time = curr_time + update_time

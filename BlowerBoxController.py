@@ -1,13 +1,11 @@
 import tkinter as tk
-import csv
-import time
 from datetime import datetime  # Pulls current time from system
 from tkinter.constants import FALSE
 from labjack import ljm
 from simple_pid import PID
 import threading
 
-from sensors import *
+# from sensors import *
 import blowercontrol
 import settings as settings
 import datalogging
