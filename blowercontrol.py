@@ -5,7 +5,7 @@ import sensors
 import settings as settings
 
 
-def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blowerFlow):
+def blower(handle, labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e):
     """Reads in sheath flow sensors, updates GUI and executes the PID control"""
 
     # Set flow to 0 LPM and pause to allow blower to slow down
@@ -22,7 +22,7 @@ def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blow
     while True:
         try:
             # Break out of loop on close
-            if stopThreads == True:
+            if stop_threads.is_set() == True:
                 print("Shutdown: Sheath Flow Sensors")
                 break
 
@@ -49,7 +49,7 @@ def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blow
             flow_e.insert(0, settings.flow_read)
 
             # PID Function
-            control = 0.016 * blowerFlow + 1.8885 + pid(settings.flow_read)
+            control = 0.016 * settings.blowerFlow + 1.8885 + pid(settings.flow_read)
 
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)

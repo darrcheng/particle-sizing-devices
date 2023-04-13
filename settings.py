@@ -1,6 +1,6 @@
 ####################Default Variable Settings####################
 # General Settings
-file = "C:\\Users\\Jen Lab\\Blower_Box\\trialrun.csv"  # File Name
+file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
 timer = 0
 
@@ -12,10 +12,10 @@ control = 0  # PID Output
 blowerFlow = 15  # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
-measured = 0  # Measured flow rate
-rhRead = 0  # Measured relative humidity
-tempRead = 0  # Measured temperature
-pRead = 0  # Measured pressure
+flow_read = 0  # Measured flow rate
+rh_read = 0  # Measured relative humidity
+temp_read = 0  # Measured temperature
+press_read = 0  # Measured pressure
 
 # Voltage Cycle Settings
 voltageCycle = True  # Turn voltage cycling on and off
