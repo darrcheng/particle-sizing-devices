@@ -6,19 +6,11 @@ from tkinter.constants import FALSE
 from labjack import ljm
 from simple_pid import PID
 import threading
-from sensors import *
-from blowercontrol import *
 
+from sensors import *
+import blowercontrol
 
 ####################Labjack Startup####################
-
-# # Define LJTick DAC as set in EIO4
-# tdac_flow = LJTickDAC(d, 12)
-# tdac_voltage = LJTickDAC(d,14)
-
-# Set HV Supply to 0V
-# dac1_val = d.voltageToDACBits(0)
-# d.getFeedback(u3.DAC1_8(dac1_val))
 
 handle = ljm.openS("T7", "ANY", "ANY")
 info = ljm.getHandleInfo(handle)
@@ -406,10 +398,12 @@ def onStart():
                     break
 
     # Define and start threads
+    stop_threads = threading.Event()
+    stop_scan = threading.Event()
     global b
     b = threading.Thread(
         name="Blower Monitoring",
-        target=blower,
+        target=blowercontrol.blower,
         args=(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blowerFlow),
     )
     global v
@@ -432,6 +426,7 @@ def onClose():
     # Stop threads, close Labjack and Tkinter GUI
     global stopThreads
     stopThreads = True
+    ljm.close(handle)
     # global d
     # d.close()
     runtime.destroy()

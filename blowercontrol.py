@@ -1,15 +1,12 @@
 from labjack import ljm
 import time
-from datetime import datetime  # Pulls current time from system
+
 import sensors
+import settings as settings
 
 
-# Controls the blower with PID code to ensure the flow rate stays at the specified flow rate
 def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blowerFlow):
-    global tempRead
-    global rhRead
-    global pRead
-    global measured
+    """Reads in sheath flow sensors, updates GUI and executes the PID control"""
 
     # Set flow to 0 LPM and pause to allow blower to slow down
     # tdac_flow.update(0,0)
@@ -29,42 +26,30 @@ def blower(handle, labjack_io, stopThreads, pid, temp_e, rh_e, p_e, flow_e, blow
                 print("Shutdown: Sheath Flow Sensors")
                 break
 
-            # # Pause until time to start next iteration
-            # flow_milliseconds = 0
-            # while flow_milliseconds < flow_update_time:
-            #     flow_time_new = datetime.now()
-            #     flow_milliseconds = (
-            #         int((flow_time_new - flow_time).total_seconds() * 1000)
-            #         - flow_count * flow_update_time
-            #     )
-            #     time.sleep(0.001)
-            # flow_count += 1
-
             # Read temperature and update GUI
-            tempRead = sensors.temp_update(handle, labjack_io["temp_input"])
+            settings.temp_read = sensors.temp_update(handle, labjack_io["temp_input"])
             temp_e.delete(0, "end")
-            temp_e.insert(0, tempRead)
+            temp_e.insert(0, settings.temp_read)
 
             # Read RH, correct for temperature and update GUI
-            rhRead = sensors.rh_update(handle, labjack_io["rh_input"]) / (
-                1.0546 - 0.00216 * tempRead
+            settings.rh_read = sensors.rh_update(handle, labjack_io["rh_input"]) / (
+                1.0546 - 0.00216 * settings.temp_read
             )
             rh_e.delete(0, "end")
-            rh_e.insert(0, rhRead)
+            rh_e.insert(0, settings.rh_read)
 
             # Read Pressure and update GUI
-            pRead = sensors.press_update(handle, labjack_io["press_input"])
+            settings.press_read = sensors.press_update(handle, labjack_io["press_input"])
             p_e.delete(0, "end")
-            p_e.insert(0, pRead)
+            p_e.insert(0, settings.press_read)
 
             # Read Flow Rate and update GUI
-            flowRead = sensors.flow_update(handle, labjack_io["flow_read_input"])
+            settings.flow_read = sensors.flow_update(handle, labjack_io["flow_read_input"])
             flow_e.delete(0, "end")
-            flow_e.insert(0, flowRead)
+            flow_e.insert(0, settings.flow_read)
 
             # PID Function
-            measured = sensors.flow_update(handle, labjack_io["flow_read_input"])
-            control = 0.016 * blowerFlow + 1.8885 + pid(measured)
+            control = 0.016 * blowerFlow + 1.8885 + pid(settings.flow_read)
 
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)
