@@ -2,11 +2,22 @@ from datetime import datetime
 import time
 import csv
 import settings
+import os
 
 
 def dataLogging(start_time, stop_threads):
+    # Create the subfolder with current date and time
+    current_datetime = time.strftime("%Y-%m-%d")
+    subfolder_path = os.path.join(os.getcwd(), current_datetime)
+    os.makedirs(subfolder_path, exist_ok=True)
+
+    # Create CSV file and writer
+    file_datetime = time.strftime("%Y%m%d_%H%M%S")
+    csv_filename = settings.dma + file_datetime + ".csv"
+    csv_filepath = os.path.join(subfolder_path, csv_filename)
+
     # Open CSV logging file
-    with open(settings.file, mode="w", newline="") as data_file:
+    with open(csv_filepath, mode="w", newline="") as data_file:
         data_writer = csv.writer(data_file, delimiter=",")
         data_writer.writerow(
             [
@@ -56,8 +67,8 @@ def dataLogging(start_time, stop_threads):
                         datetime.now(),
                         log_elapsed,
                         settings.flow_read,
-                        settings.labjackVoltage * settings.voltageFactor,
-                        settings.voltageMonitor,
+                        settings.ljvoltage_set_out * settings.voltage_set_scaling,
+                        settings.voltage_monitor,
                         settings.temp_read,
                         settings.rh_read,
                         settings.press_read,

@@ -8,14 +8,16 @@ import sensors
 # Controls the DMA voltage scanning
 def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
     # Set variables based on GUI inputs
-    voltage = int(settings.lvl)
-    increment = (int(settings.uvl) - int(settings.lvl)) / int(settings.bins)
-    labjackVoltage = voltage / settings.voltageFactor
-    labjackIncrement = increment / settings.voltageFactor
+    voltage = int(settings.low_voltage_lim)
+    increment = (int(settings.high_voltage_lim) - int(settings.low_voltage_lim)) / int(
+        settings.bins
+    )
+    labjackVoltage = voltage / settings.voltage_set_scaling
+    labjackIncrement = increment / settings.voltage_set_scaling
 
     # Constants for flow intervals
     curr_time = time.monotonic()
-    update_time = 0.500  # seconds
+    update_time = settings.voltage_update_time / 1000  # seconds
 
     while True:
         try:
@@ -52,7 +54,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
                     # Set Voltage to Labjack and update GUI
                     ljm.eWriteName(handle, labjack_io["voltage_set_output"], labjackVoltage)
                     voltageSetPoint_e.delete(0, "end")
-                    voltageSetPoint_e.insert(0, labjackVoltage * settings.voltageFactor)
+                    voltageSetPoint_e.insert(0, labjackVoltage * settings.voltage_set_scaling)
 
                     # Schedule the next update
                     curr_time = curr_time + update_time
@@ -92,9 +94,11 @@ def vIn(handle, labjack_io, stop_threads, supplyVoltage_e):
                 break
 
             # Read in HV supply voltage and update GUI
-            settings.voltageMonitor = sensors.hv_update(handle, labjack_io["voltage_monitor_input"])
+            settings.voltage_monitor = sensors.hv_update(
+                handle, labjack_io["voltage_monitor_input"]
+            )
             supplyVoltage_e.delete(0, "end")
-            supplyVoltage_e.insert(0, settings.voltageMonitor)
+            supplyVoltage_e.insert(0, settings.voltage_monitor)
 
             # Schedule the next update
             curr_time = curr_time + update_time

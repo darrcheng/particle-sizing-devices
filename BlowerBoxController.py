@@ -5,7 +5,6 @@ from labjack import ljm
 from simple_pid import PID
 import threading
 
-# from sensors import *
 import blowercontrol
 import settings as settings
 import datalogging
@@ -38,17 +37,17 @@ def voltageCycle_callback():
 
 # Lower Voltage Limit Update
 def lvl_callback():
-    settings.lvl = lvl_e.get()
+    settings.low_voltage_lim = lvl_e.get()
 
 
 # Upper Voltage Limit Update
 def uvl_callback():
-    settings.uvl = uvl_e.get()
+    settings.high_voltage_lim = uvl_e.get()
 
 
 # Step Time Update
 def voltageUpdate_callback():
-    settings.voltageUpdate = float(voltageUpdate_e.get())
+    settings.voltage_update_time = float(voltageUpdate_e.get())
 
 
 # Number of bins Update
@@ -58,8 +57,8 @@ def bins_callback():
 
 # Blower Flow Setpoint
 def blowerFlow_callback():
-    settings.blowerFlow = blowerFlow_e.get()
-    settings.pid.setpoint = settings.blowerFlow
+    settings.blower_flow_set = blowerFlow_e.get()
+    pid.setpoint = settings.blower_flow_set
 
 
 # File Name Update
@@ -76,7 +75,7 @@ def onStart():
 
     # Configure PID Controller
     global pid
-    pid = PID(settings.pidp, settings.pidi, settings.pidd, setpoint=settings.blowerFlow)
+    pid = PID(settings.pidp, settings.pidi, settings.pidd, setpoint=settings.blower_flow_set)
     pid.output_limits = (-0.25, 0.25)
 
     # Set Variables
@@ -96,9 +95,6 @@ def onStart():
     flow_e.pack()
 
     # Define and start threads
-    # global stop_threads
-    # stop_threads = threading.Event()
-
     global b
     b = threading.Thread(
         name="Blower Monitoring",
@@ -138,8 +134,6 @@ def onClose():
     stopThreads = True
     stop_threads.set()
     ljm.close(handle)
-    # global d
-    # d.close()
     runtime.destroy()
 
 
@@ -158,7 +152,7 @@ setpoint_title = tk.Label(gui_settings, text="Set Point Values").grid(row=0, col
 # Lower Voltage Limit
 lvl_label = tk.Label(gui_settings, text="Lower Voltage Limit (V)").grid(row=1, column=0)
 lvl_e = tk.Entry(gui_settings)
-lvl_e.insert(0, settings.lvl)
+lvl_e.insert(0, settings.low_voltage_lim)
 lvl_b = tk.Button(gui_settings, text="Update", command=lvl_callback)
 lvl_e.grid(row=1, column=1)
 lvl_b.grid(row=1, column=2)
@@ -166,7 +160,7 @@ lvl_b.grid(row=1, column=2)
 # Upper Voltage Limit
 uvl_label = tk.Label(gui_settings, text="Upper Voltage Limit (V)").grid(row=1, column=4)
 uvl_e = tk.Entry(gui_settings)
-uvl_e.insert(0, settings.uvl)
+uvl_e.insert(0, settings.high_voltage_lim)
 uvl_b = tk.Button(gui_settings, text="Update", command=uvl_callback)
 uvl_e.grid(row=1, column=5)
 uvl_b.grid(row=1, column=6)
@@ -182,7 +176,7 @@ bins_b.grid(row=2, column=2)
 # Voltage Update
 voltageUpdate_label = tk.Label(gui_settings, text="Voltage Update Time (ms)").grid(row=2, column=4)
 voltageUpdate_e = tk.Entry(gui_settings)
-voltageUpdate_e.insert(0, settings.voltageUpdate)
+voltageUpdate_e.insert(0, settings.voltage_update_time)
 voltageUpdate_b = tk.Button(gui_settings, text="Update", command=voltageUpdate_callback)
 voltageUpdate_e.grid(row=2, column=5)
 voltageUpdate_b.grid(row=2, column=6)
@@ -190,7 +184,7 @@ voltageUpdate_b.grid(row=2, column=6)
 # Blower Flow Rate
 blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=3, column=3)
 blowerFlow_e = tk.Entry(gui_settings)
-blowerFlow_e.insert(0, settings.blowerFlow)
+blowerFlow_e.insert(0, settings.blower_flow_set)
 blowerFlow_b = tk.Button(gui_settings, text="Update", command=blowerFlow_callback)
 blowerFlow_e.grid(row=4, column=3)
 blowerFlow_b.grid(row=4, column=4)
@@ -213,13 +207,13 @@ voltageCycle_b.grid(row=2, column=3)
 # Current Set Voltage
 voltageSetPoint_label = tk.Label(gui_settings, text="Set Voltage").grid(row=3, column=5)
 voltageSetPoint_e = tk.Entry(gui_settings)
-voltageSetPoint_e.insert(0, settings.labjackVoltage * settings.voltageFactor)
+voltageSetPoint_e.insert(0, settings.ljvoltage_set_out * settings.voltage_set_scaling)
 voltageSetPoint_e.grid(row=4, column=5)
 
 # Current Monitor Voltage
 supplyVoltage_label = tk.Label(gui_settings, text="Supply Voltage").grid(row=5, column=5)
 supplyVoltage_e = tk.Entry(gui_settings)
-supplyVoltage_e.insert(0, settings.voltageMonitor)
+supplyVoltage_e.insert(0, settings.voltage_monitor)
 supplyVoltage_e.grid(row=6, column=5)
 
 # Start Button

@@ -3,13 +3,14 @@
 file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
 timer = 0
+dma = "nanodma"
 
 # Flow Settings
 pidp = 0.2  # PID Proportional Gain
 pidi = 0  # PID Integral Gain
 pidd = 0  # PID Derivative Gain
 control = 0  # PID Output
-blowerFlow = 15  # Set Blower Flow Rate in [LPM]
+blower_flow_set = 15  # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
 flow_read = 0  # Measured flow rate
@@ -19,13 +20,13 @@ press_read = 0  # Measured pressure
 
 # Voltage Cycle Settings
 voltageCycle = True  # Turn voltage cycling on and off
-lvl = 10  # Lower Voltage Limit #V will be 100
-uvl = 200  # Upper Voltage Limit #V will be 8000'
+low_voltage_lim = 10  # Lower Voltage Limit #V will be 100
+high_voltage_lim = 200  # Upper Voltage Limit #V will be 8000'
 bins = 10  # Number of steps in voltage cycle
-voltageUpdate = 5000  # Time between each voltage step
-labjackVoltage = 0  # Labjack output to control HV supply
-voltageMonitor = 0  # Current voltage read from HV supply monitor
-voltageFactor = 10000 / 5  # Scaling for HV Supply
+voltage_update_time = 5000  # Time between each voltage step
+ljvoltage_set_out = 0  # Labjack output to control HV supply
+voltage_monitor = 0  # Current voltage read from HV supply monitor
+voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
 # Initalizing threads for running blower and voltage setting codes
 b = None  # Bloewr Control

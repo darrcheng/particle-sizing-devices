@@ -49,7 +49,7 @@ def blower(handle, labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e):
             flow_e.insert(0, settings.flow_read)
 
             # PID Function
-            control = 0.016 * settings.blowerFlow + 1.8885 + pid(settings.flow_read)
+            control = 0.016 * settings.blower_flow_set + 1.8885 + pid(settings.flow_read)
 
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)
