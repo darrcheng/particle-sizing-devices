@@ -120,7 +120,7 @@ def onStart():
     )
     global data_logging_thread
     data_logging_thread = threading.Thread(
-        name="Data Logging", target=datalogging.dataLogging, args=(start_time, stop_threads)
+        name="Data Logging", target=datalogging.dataLogging, args=(start_time, stop_threads, file_e)
     )
     global cpc_counting_thread
     cpc_counting_thread = threading.Thread(
@@ -204,11 +204,8 @@ blowerFlow_b.grid(row=4, column=4)
 data_storage_label = tk.Label(gui_settings, text="Data Storage (File Location)").grid(
     row=5, column=3
 )
-file_e = tk.Entry(gui_settings)
-file_e.insert(0, set.file)
-file_b = tk.Button(gui_settings, text="Update", command=file_callback)
+file_e = tk.Entry(gui_settings, width=70)
 file_e.grid(row=6, column=3)
-file_b.grid(row=6, column=4)
 
 # Voltage Cycle Button
 voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=1, column=3)

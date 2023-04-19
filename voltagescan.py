@@ -75,8 +75,9 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
                 # Send voltage to Labjack
                 ljm.eWriteName(handle, labjack_io["voltage_set_output"], labjackVoltage)
 
-        except BaseException:
+        except BaseException as e:
             print("Voltage Scan Error")
+            print(e)
             break
 
 
@@ -109,4 +110,5 @@ def vIn(handle, labjack_io, stop_threads, supplyVoltage_e):
 
         except BaseException as e:
             print("Voltage Monitor Error")
+            print(e)
             break

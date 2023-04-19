@@ -5,7 +5,7 @@ import settings
 import os
 
 
-def dataLogging(start_time, stop_threads):
+def dataLogging(start_time, stop_threads, file_e):
     # Create the subfolder with current date and time
     current_datetime = time.strftime("%Y-%m-%d")
     subfolder_path = os.path.join(os.getcwd(), current_datetime)
@@ -15,6 +15,7 @@ def dataLogging(start_time, stop_threads):
     file_datetime = time.strftime("%Y%m%d_%H%M%S")
     csv_filename = settings.dma + file_datetime + ".csv"
     csv_filepath = os.path.join(subfolder_path, csv_filename)
+    file_e.insert(0, csv_filepath)
 
     # Open CSV logging file
     with open(csv_filepath, mode="w", newline="") as data_file:

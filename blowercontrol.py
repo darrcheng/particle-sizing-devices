@@ -61,6 +61,7 @@ def blower(handle, labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e):
                 next_time = 0
             time.sleep(next_time)
 
-        except BaseException:
+        except BaseException as e:
             print("Sheath Flow Sensor Error")
+            print(e)
             break
