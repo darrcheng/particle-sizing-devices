@@ -24,12 +24,15 @@ def dataLogging(start_time, stop_threads):
                 "Count",
                 "Timer",
                 "Elapsed Time",
-                "Flow Rate [LPM]",
                 "Set Voltage [V]",
                 "Actual Voltage[V]",
+                "Flow Rate [LPM]",
                 "Temperature [C]",
                 "RH[%]",
                 "Pressure[kPa]",
+                "Concentration[#/cc]",
+                "Counts [#]",
+                "Pulse Width [s]",
             ]
         )
         log_time = start_time
@@ -39,7 +42,7 @@ def dataLogging(start_time, stop_threads):
 
         # Constants for update intervals
         curr_time = time.monotonic()
-        update_time = 0.500  # seconds
+        update_time = 1  # seconds
 
         # Infinite Loop
         while True:
@@ -66,12 +69,15 @@ def dataLogging(start_time, stop_threads):
                         count,
                         datetime.now(),
                         log_elapsed,
-                        settings.flow_read,
                         settings.ljvoltage_set_out * settings.voltage_set_scaling,
                         settings.voltage_monitor,
+                        settings.flow_read,
                         settings.temp_read,
                         settings.rh_read,
                         settings.press_read,
+                        settings.concentration,
+                        settings.curr_count,
+                        settings.pulse_width,
                     ]
                 )
 

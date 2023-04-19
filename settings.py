@@ -1,8 +1,8 @@
 ####################Default Variable Settings####################
 # General Settings
-file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
+# file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
-timer = 0
+# timer = 0
 dma = "nanodma"
 
 # Flow Settings
@@ -28,19 +28,20 @@ ljvoltage_set_out = 0  # Labjack output to control HV supply
 voltage_monitor = 0  # Current voltage read from HV supply monitor
 voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
-# Initalizing threads for running blower and voltage setting codes
-b = None  # Bloewr Control
-v = None  # Voltage Set
-m = None  # Voltage Monitor
+# CPC Variables
+curr_count = 0
+concentration = 0
+pulse_width = 0
+cpc_flowrate = 300 / 60  # cubic centimeters per second
 
-# # Labjack Inputs
-flow_read_input = "AIN0"
-voltage_monitor_input = "AIN1"
-press_input = "AIN2"
-temp_input = "AIN3"
-rh_input = "AIN4"
-voltage_set_ouput = "DAC0"
-flow_set_output = "TDAC0"
+# # # Labjack Inputs
+# flow_read_input = "AIN0"
+# voltage_monitor_input = "AIN1"
+# press_input = "AIN2"
+# temp_input = "AIN3"
+# rh_input = "AIN4"
+# voltage_set_ouput = "DAC0"
+# flow_set_output = "TDAC0"
 
 labjack_io = {
     "flow_read_input": "AIN0",
@@ -49,5 +50,7 @@ labjack_io = {
     "temp_input": "AIN3",
     "rh_input": "AIN4",
     "voltage_set_output": "DAC0",
-    "flow_set_output": "TDAC0",
+    "flow_set_output": "TDAC2",
+    "counter": "DIO18",
+    "width": "DIO0",
 }
