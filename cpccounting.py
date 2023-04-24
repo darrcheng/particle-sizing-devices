@@ -1,9 +1,9 @@
 import labjack.ljm as ljm
 import time
-import settings
+import shared_var
 
 
-def cpc_conc(handle, labjack_io, stop_threads, count_e):
+def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
     # Configure clock
     ljm.eWriteName(handle, "DIO_EF_CLOCK1_ENABLE", 0)  # Disable clock 1
     ljm.eWriteName(handle, "DIO_EF_CLOCK2_ENABLE", 0)  # Disable clock 2
@@ -49,28 +49,28 @@ def cpc_conc(handle, labjack_io, stop_threads, count_e):
 
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
-            settings.curr_count = count - prev_count
+            shared_var.curr_count = count - prev_count
             # settings.pulse_width = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
             # settings.pulse_width = 0
             data = ljm.eStreamRead(handle)
             curSkip = data.count(-9999.0)
 
             # Extract the pulse width from the stream data
-            settings.pulse_width = sum(data[0]) / 80e6 * ((count - prev_count) / 2000)
+            shared_var.pulse_width = sum(data[0]) / 80e6 * ((count - prev_count) / 2000)
 
             # Calculate the elapsed time since the last count
             count_time = time.monotonic()
             elapsed_time = count_time - prev_time
 
             # Calculate the count rate in pulses per second
-            settings.concentration = (count - prev_count) / (
-                (elapsed_time - settings.pulse_width) * settings.cpc_flowrate
+            shared_var.concentration = (count - prev_count) / (
+                (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
             )
-            dead_time = settings.pulse_width
+            dead_time = shared_var.pulse_width
 
             # Display the count rate in the label widget
             count_e.delete(0, "end")
-            count_e.insert(0, settings.concentration)
+            count_e.insert(0, shared_var.concentration)
 
             # Set the previous count and time for the next iteration
             prev_time = count_time

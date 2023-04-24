@@ -1,18 +1,21 @@
 from labjack import ljm
 import time
 
+
 # Returns Temperature Probe input
-def temp_update(handle, temp_input):
+def temp_update(handle, temp_input, temp_factor):
     """Returns temperature from sensor input
     Correction factor: temperature = voltage * 100"""
-    return ljm.eReadName(handle, temp_input) / 0.01
+    return ljm.eReadName(handle, temp_input) / temp_factor
 
 
 # Returns RH Probe input
-def rh_update(handle, rh_input):
-    """Returns RH from sensor input (not temperatur adjusted)
+def rh_update(handle, rh_input, curr_temp):
+    """Returns RH from sensor input
     Correction factor:"""
-    return (ljm.eReadName(handle, rh_input) / 5 - 0.16) / 0.0062
+    sensor_rh = (ljm.eReadName(handle, rh_input) / 5 - 0.16) / 0.0062
+    true_rh = (sensor_rh) / (1.0546 - 0.00216 * curr_temp)
+    return true_rh
 
 
 # Returns Pressure Probe (PSense) input
@@ -23,12 +26,13 @@ def press_update(handle, press_input):
 
 
 # Returns Flow Reading (Averaged over 5 readings, 1ms apart)
-def flow_update(handle, flow_read_input):
+def flow_update(handle, flow_read_input, flow_factor, flow_offset):
     """Returns flow reading in SLPM, 5 averaged readings 1 ms apart"""
     slpm = []
     flow_measure_repeat = 0
     while flow_measure_repeat < 5:
-        slpm.append((ljm.eReadName(handle, flow_read_input) - 0.9947) / 0.1714)
+        flow_rate = (ljm.eReadName(handle, flow_read_input) - flow_offset) / flow_factor
+        slpm.append(flow_rate)
         # tFactor = (temp_update(handle, temp_input) + 273.15) / 273.15
         # pFactor = 100 / (100 + press_update(handle, press_input))
         time.sleep(0.001)
@@ -38,15 +42,21 @@ def flow_update(handle, flow_read_input):
 
 
 # Returns HV Supply Voltage
-def hv_update(handle, voltage_monitor_input):
+def hv_update(handle, voltage_monitor_input, voltage_factor, voltage_offset):
     """Returns HV montior reading, 5 averaged readings 1 ms apart"""
-    voltage = []
+    voltage_list = []
     voltage_measure_repeat = 0
+<<<<<<< HEAD
     while voltage_measure_repeat < 10:
         sensor_voltage = ljm.eReadName(handle, voltage_monitor_input) * 1000
         corrected_voltage = (sensor_voltage - 11.578)/1.1183
         voltage.append(corrected_voltage)
+=======
+    while voltage_measure_repeat < 5:
+        voltage = ljm.eReadName(handle, voltage_monitor_input) * voltage_factor - voltage_offset
+        voltage_list.append(voltage)
+>>>>>>> abbf373ec12baea022921102877aafa9a4013c66
         time.sleep(0.001)
         voltage_measure_repeat += 1
-    avg_voltage = sum(voltage) / len(voltage)
+    avg_voltage = sum(voltage_list) / len(voltage_list)
     return avg_voltage

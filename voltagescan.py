@@ -1,23 +1,21 @@
 from labjack import ljm
 import time
 from datetime import datetime  # Pulls current time from system
-import settings as settings
+import shared_var as shared_var
 import sensors
 
 
 # Controls the DMA voltage scanning
-def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
+def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSetPoint_e):
     # Set variables based on GUI inputs
-    voltage = int(settings.low_voltage_lim)
-    increment = (int(settings.high_voltage_lim) - int(settings.low_voltage_lim)) / int(
-        settings.bins
-    )
-    labjackVoltage = voltage / settings.voltage_set_scaling
-    labjackIncrement = increment / settings.voltage_set_scaling
+    voltage = int(shared_var.low_voltage_lim)
+    increment = shared_var.interval
+    labjackVoltage = voltage / voltage_config["voltage_set_factor"]
+    labjackIncrement = increment / voltage_config["voltage_set_factor"]
 
     # Constants for flow intervals
     curr_time = time.monotonic()
-    update_time = settings.voltage_update_time / 1000  # seconds
+    update_time = shared_var.voltage_update_time / 1000  # seconds
 
     while True:
         try:
@@ -41,7 +39,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
                 labjackVoltage = 0
 
                 # Loop through voltages between upper and lower limits
-                for i in range(int(settings.bins)):
+                for i in range(int(shared_var.interval)):
                     # Break out of loop on close
                     if stop_threads.is_set() == True:
                         print("Shutdown: Voltage Set")
@@ -53,8 +51,11 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
 
                     # Set Voltage to Labjack and update GUI
                     ljm.eWriteName(handle, labjack_io["voltage_set_output"], labjackVoltage)
+                    shared_var.ljvoltage_set_out = (
+                        labjackVoltage * voltage_config["voltage_set_factor"]
+                    )
                     voltageSetPoint_e.delete(0, "end")
-                    voltageSetPoint_e.insert(0, labjackVoltage * settings.voltage_set_scaling)
+                    voltageSetPoint_e.insert(0, shared_var.ljvoltage_set_out)
 
                     # Schedule the next update
                     curr_time = curr_time + update_time
@@ -82,7 +83,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltageSetPoint_e):
 
 
 # Define Voltage Monitor
-def vIn(handle, labjack_io, stop_threads, supplyVoltage_e):
+def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
     # Constants for flow intervals
     curr_time = time.monotonic()
     update_time = 0.200  # seconds
@@ -95,11 +96,14 @@ def vIn(handle, labjack_io, stop_threads, supplyVoltage_e):
                 break
 
             # Read in HV supply voltage and update GUI
-            settings.voltage_monitor = sensors.hv_update(
-                handle, labjack_io["voltage_monitor_input"]
+            shared_var.voltage_monitor = sensors.hv_update(
+                handle,
+                labjack_io["voltage_monitor_input"],
+                sensor_config["voltage_factor"],
+                sensor_config["voltage_offset"],
             )
             supplyVoltage_e.delete(0, "end")
-            supplyVoltage_e.insert(0, settings.voltage_monitor)
+            supplyVoltage_e.insert(0, shared_var.voltage_monitor)
 
             # Schedule the next update
             curr_time = curr_time + update_time
