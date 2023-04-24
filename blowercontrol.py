@@ -2,10 +2,10 @@ from labjack import ljm
 import time
 
 import sensors
-import settings as settings
+import shared_var as shared_var
 
 
-def blower(handle, labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e):
+def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p_e, flow_e):
     """Reads in sheath flow sensors, updates GUI and executes the PID control"""
 
     # Set flow to 0 LPM and pause to allow blower to slow down
@@ -27,29 +27,36 @@ def blower(handle, labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e):
                 break
 
             # Read temperature and update GUI
-            settings.temp_read = sensors.temp_update(handle, labjack_io["temp_input"])
+            shared_var.temp_read = sensors.temp_update(
+                handle, labjack_io["temp_input"], sensor_config["temp_factor"]
+            )
             temp_e.delete(0, "end")
-            temp_e.insert(0, settings.temp_read)
+            temp_e.insert(0, shared_var.temp_read)
 
             # Read RH, correct for temperature and update GUI
-            settings.rh_read = sensors.rh_update(handle, labjack_io["rh_input"]) / (
-                1.0546 - 0.00216 * settings.temp_read
+            shared_var.rh_read = sensors.rh_update(
+                handle, labjack_io["rh_input"], shared_var.temp_read
             )
             rh_e.delete(0, "end")
-            rh_e.insert(0, settings.rh_read)
+            rh_e.insert(0, shared_var.rh_read)
 
             # Read Pressure and update GUI
-            settings.press_read = sensors.press_update(handle, labjack_io["press_input"])
+            shared_var.press_read = sensors.press_update(handle, labjack_io["press_input"])
             p_e.delete(0, "end")
-            p_e.insert(0, settings.press_read)
+            p_e.insert(0, shared_var.press_read)
 
             # Read Flow Rate and update GUI
-            settings.flow_read = sensors.flow_update(handle, labjack_io["flow_read_input"])
+            shared_var.flow_read = sensors.flow_update(
+                handle,
+                labjack_io["flow_read_input"],
+                sensor_config["flow_factor"],
+                sensor_config["flow_offset"],
+            )
             flow_e.delete(0, "end")
-            flow_e.insert(0, settings.flow_read)
+            flow_e.insert(0, shared_var.flow_read)
 
             # PID Function
-            control = 0.016 * settings.blower_flow_set + 1.8885 + pid(settings.flow_read)
+            control = 0.016 * shared_var.blower_flow_set + 1.8885 + pid(shared_var.flow_read)
 
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)

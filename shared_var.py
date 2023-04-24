@@ -3,14 +3,14 @@
 # file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
 # timer = 0
-dma = "nanodma"
+# dma = "nanodma"
 
 # Flow Settings
 pidp = 0.2  # PID Proportional Gain
 pidi = 0  # PID Integral Gain
 pidd = 0  # PID Derivative Gain
 control = 0  # PID Output
-blower_flow_set = 15  # Set Blower Flow Rate in [LPM]
+blower_flow_set = 0  # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
 flow_read = 0  # Measured flow rate
@@ -21,18 +21,18 @@ press_read = 0  # Measured pressure
 # Voltage Cycle Settings
 voltageCycle = True  # Turn voltage cycling on and off
 low_voltage_lim = 0  # Lower Voltage Limit #V will be 100
-high_voltage_lim = 600  # Upper Voltage Limit #V will be 8000'
-bins = 10  # Number of steps in voltage cycle
-voltage_update_time = 5000  # Time between each voltage step
+high_voltage_lim = 0  # Upper Voltage Limit #V will be 8000'
+interval = 0  # Number of steps in voltage cycle
+voltage_update_time = 0  # Time between each voltage step
 ljvoltage_set_out = 0  # Labjack output to control HV supply
 voltage_monitor = 0  # Current voltage read from HV supply monitor
-voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
+# voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
 # CPC Variables
 curr_count = 0
 concentration = 0
 pulse_width = 0
-cpc_flowrate = 300 / 60  # cubic centimeters per second
+# cpc_flowrate = 300 / 60  # cubic centimeters per second
 
 # # # Labjack Inputs
 # flow_read_input = "AIN0"
@@ -43,14 +43,14 @@ cpc_flowrate = 300 / 60  # cubic centimeters per second
 # voltage_set_ouput = "DAC0"
 # flow_set_output = "TDAC0"
 
-labjack_io = {
-    "flow_read_input": "AIN0",
-    "voltage_monitor_input": "AIN1",
-    "press_input": "AIN2",
-    "temp_input": "AIN3",
-    "rh_input": "AIN4",
-    "voltage_set_output": "DAC0",
-    "flow_set_output": "TDAC2",
-    "counter": "DIO18",
-    "width": "DIO0",
-}
+# labjack_io = {
+#     "flow_read_input": "AIN0",
+#     "voltage_monitor_input": "AIN1",
+#     "press_input": "AIN2",
+#     "temp_input": "AIN3",
+#     "rh_input": "AIN4",
+#     "voltage_set_output": "DAC0",
+#     "flow_set_output": "TDAC2",
+#     "counter": "DIO18",
+#     "width": "DIO0",
+# }
