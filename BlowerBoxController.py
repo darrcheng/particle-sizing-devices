@@ -4,9 +4,10 @@ from tkinter.constants import FALSE
 from labjack import ljm
 from simple_pid import PID
 import threading
+import yaml
 
 import blowercontrol
-import settings as set
+import shared_var as set
 import datalogging
 import voltagescan
 import cpccounting
@@ -21,6 +22,10 @@ ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
 
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
+
+gui_config = config["gui_config"]
 
 ####################TKinter Button Functions####################
 # Define callback function for update button in Tkinter GUI
@@ -54,13 +59,13 @@ def voltageUpdate_callback():
 
 # Number of bins Update
 def bins_callback():
-    set.bins = bins_e.get()
+    set.interval = bins_e.get()
 
 
 # Blower Flow Setpoint
 def blowerFlow_callback():
     set.blower_flow_set = blowerFlow_e.get()
-    pid.setpoint = set.blower_flow_set
+    # pid.setpoint = set.blower_flow_set
 
 
 # File Name Update
@@ -103,30 +108,49 @@ def onStart():
     blower_thread = threading.Thread(
         name="Blower Monitoring",
         target=blowercontrol.blower,
-        args=(handle, set.labjack_io, stop_threads, pid, temp_e, rh_e, p_e, flow_e),
+        args=(
+            handle,
+            config["labjack_io"],
+            stop_threads,
+            config["sensor_config"],
+            pid,
+            temp_e,
+            rh_e,
+            p_e,
+            flow_e,
+        ),
     )
     global voltage_scan_thread
     voltage_scan_thread = threading.Thread(
         name="High Voltage",
         target=voltagescan.hv,
-        args=(handle, set.labjack_io, stop_threads, voltage_scan, voltageSetPoint_e),
+        args=(
+            handle,
+            config["labjack_io"],
+            stop_threads,
+            voltage_scan,
+            config["voltage_set_config"],
+            voltageSetPoint_e,
+        ),
     )
 
     global voltage_monitor_thread
     voltage_monitor_thread = threading.Thread(
         name="Voltage Monitor",
         target=voltagescan.vIn,
-        args=(handle, set.labjack_io, stop_threads, supplyVoltage_e),
+        args=(handle, config["labjack_io"], stop_threads, config["sensor_config"], supplyVoltage_e),
     )
     global data_logging_thread
     data_logging_thread = threading.Thread(
-        name="Data Logging", target=datalogging.dataLogging, args=(start_time, stop_threads, file_e)
+        name="Data Logging",
+        target=datalogging.dataLogging,
+        args=(start_time, stop_threads, config["dma"], file_e),
     )
     global cpc_counting_thread
     cpc_counting_thread = threading.Thread(
         name="CPC Counting",
         target=cpccounting.cpc_conc,
-        args=(handle, set.labjack_io, stop_threads, count_e),
+        args=(handle, config["labjack_io"], stop_threads, config["cpc_config"], count_e),
     )
     blower_thread.start()
     voltage_scan_thread.start()
@@ -161,6 +185,7 @@ gui_settings.pack()
 setpoint_title = tk.Label(gui_settings, text="Set Point Values").grid(row=0, column=3)
 
 # Lower Voltage Limit
+set.low_voltage_lim = gui_config["low_voltage_lim"]
 lvl_label = tk.Label(gui_settings, text="Lower Voltage Limit (V)").grid(row=1, column=0)
 lvl_e = tk.Entry(gui_settings)
 lvl_e.insert(0, set.low_voltage_lim)
@@ -169,6 +194,7 @@ lvl_e.grid(row=1, column=1)
 lvl_b.grid(row=1, column=2)
 
 # Upper Voltage Limit
+set.high_voltage_lim = gui_config["high_voltage_lim"]
 uvl_label = tk.Label(gui_settings, text="Upper Voltage Limit (V)").grid(row=1, column=4)
 uvl_e = tk.Entry(gui_settings)
 uvl_e.insert(0, set.high_voltage_lim)
@@ -177,14 +203,16 @@ uvl_e.grid(row=1, column=5)
 uvl_b.grid(row=1, column=6)
 
 # Bins
-bins_label = tk.Label(gui_settings, text="Bins").grid(row=2, column=0)
+set.interval = gui_config["interval"]
+bins_label = tk.Label(gui_settings, text="Interval").grid(row=2, column=0)
 bins_e = tk.Entry(gui_settings)
-bins_e.insert(0, set.bins)
+bins_e.insert(0, set.interval)
 bins_b = tk.Button(gui_settings, text="Update", command=bins_callback)
 bins_e.grid(row=2, column=1)
 bins_b.grid(row=2, column=2)
 
 # Voltage Update
+set.voltage_update_time = gui_config["voltage_update_time"]
 voltageUpdate_label = tk.Label(gui_settings, text="Voltage Update Time (ms)").grid(row=2, column=4)
 voltageUpdate_e = tk.Entry(gui_settings)
 voltageUpdate_e.insert(0, set.voltage_update_time)
@@ -193,6 +221,7 @@ voltageUpdate_e.grid(row=2, column=5)
 voltageUpdate_b.grid(row=2, column=6)
 
 # Blower Flow Rate
+set.blower_flow_set = gui_config["blower_flow_set"]
 blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=3, column=3)
 blowerFlow_e = tk.Entry(gui_settings)
 blowerFlow_e.insert(0, set.blower_flow_set)
@@ -215,7 +244,7 @@ voltageCycle_b.grid(row=2, column=3)
 # Current Set Voltage
 voltageSetPoint_label = tk.Label(gui_settings, text="Set Voltage").grid(row=3, column=5)
 voltageSetPoint_e = tk.Entry(gui_settings)
-voltageSetPoint_e.insert(0, set.ljvoltage_set_out * set.voltage_set_scaling)
+voltageSetPoint_e.insert(0, set.ljvoltage_set_out)
 voltageSetPoint_e.grid(row=4, column=5)
 
 # Current Monitor Voltage

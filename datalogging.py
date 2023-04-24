@@ -1,11 +1,11 @@
 from datetime import datetime
 import time
 import csv
-import settings
+import shared_var
 import os
 
 
-def dataLogging(start_time, stop_threads, file_e):
+def dataLogging(start_time, stop_threads, dma, file_e):
     # Create the subfolder with current date and time
     current_datetime = time.strftime("%Y-%m-%d")
     subfolder_path = os.path.join(os.getcwd(), current_datetime)
@@ -13,7 +13,7 @@ def dataLogging(start_time, stop_threads, file_e):
 
     # Create CSV file and writer
     file_datetime = time.strftime("%Y%m%d_%H%M%S")
-    csv_filename = settings.dma + file_datetime + ".csv"
+    csv_filename = dma + file_datetime + ".csv"
     csv_filepath = os.path.join(subfolder_path, csv_filename)
     file_e.insert(0, csv_filepath)
 
@@ -70,18 +70,19 @@ def dataLogging(start_time, stop_threads, file_e):
                         count,
                         datetime.now(),
                         log_elapsed,
-                        settings.ljvoltage_set_out * settings.voltage_set_scaling,
-                        settings.voltage_monitor,
-                        settings.flow_read,
-                        settings.temp_read,
-                        settings.rh_read,
-                        settings.press_read,
-                        settings.concentration,
-                        settings.curr_count,
-                        settings.pulse_width,
+                        shared_var.ljvoltage_set_out,
+                        shared_var.voltage_monitor,
+                        shared_var.flow_read,
+                        shared_var.temp_read,
+                        shared_var.rh_read,
+                        shared_var.press_read,
+                        shared_var.concentration,
+                        shared_var.curr_count,
+                        shared_var.pulse_width,
                     ]
                 )
 
-            except BaseException:
+            except BaseException as e:
                 print("Data Logging Error")
+                print(e)
                 break
