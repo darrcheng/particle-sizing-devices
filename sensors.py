@@ -42,8 +42,10 @@ def hv_update(handle, voltage_monitor_input):
     """Returns HV montior reading, 5 averaged readings 1 ms apart"""
     voltage = []
     voltage_measure_repeat = 0
-    while voltage_measure_repeat < 5:
-        voltage.append(ljm.eReadName(handle, voltage_monitor_input) * 1000)
+    while voltage_measure_repeat < 10:
+        sensor_voltage = ljm.eReadName(handle, voltage_monitor_input) * 1000
+        corrected_voltage = (sensor_voltage - 11.578)/1.1183
+        voltage.append(corrected_voltage)
         time.sleep(0.001)
         voltage_measure_repeat += 1
     avg_voltage = sum(voltage) / len(voltage)

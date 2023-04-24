@@ -10,7 +10,7 @@ pidp = 0.2  # PID Proportional Gain
 pidi = 0  # PID Integral Gain
 pidd = 0  # PID Derivative Gain
 control = 0  # PID Output
-blower_flow_set = 15  # Set Blower Flow Rate in [LPM]
+blower_flow_set = 14  # Set Blower Flow Rate in [LPM]
 
 # Flow Measurement Variables
 flow_read = 0  # Measured flow rate
