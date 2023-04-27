@@ -12,6 +12,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
     increment = shared_var.interval
     labjackVoltage = voltage / voltage_config["voltage_set_factor"]
     labjackIncrement = increment / voltage_config["voltage_set_factor"]
+    bins = (shared_var.high_voltage_lim -shared_var.low_voltage_lim)/shared_var.interval
 
     # Constants for flow intervals
     curr_time = time.monotonic()
@@ -39,7 +40,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
                 labjackVoltage = 0
 
                 # Loop through voltages between upper and lower limits
-                for i in range(int(shared_var.interval)):
+                for i in range(int(bins)):
                     # Break out of loop on close
                     if stop_threads.is_set() == True:
                         print("Shutdown: Voltage Set")

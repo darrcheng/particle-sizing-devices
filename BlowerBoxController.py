@@ -14,6 +14,8 @@ import cpccounting
 
 ####################Labjack Startup####################
 
+config_file = 'nano_config.yml'
+
 handle = ljm.openS("T7", "ANY", "ANY")
 info = ljm.getHandleInfo(handle)
 ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
@@ -22,7 +24,7 @@ ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
 
-with open("config.yml", "r") as f:
+with open(config_file, "r") as f:
     config = yaml.safe_load(f)
 
 gui_config = config["gui_config"]
@@ -64,7 +66,8 @@ def bins_callback():
 
 # Blower Flow Setpoint
 def blowerFlow_callback():
-    set.blower_flow_set = blowerFlow_e.get()
+    flow = blowerFlow_e.get()
+    set.blower_flow_set = int(flow)
     # pid.setpoint = set.blower_flow_set
 
 
@@ -82,7 +85,8 @@ def onStart():
 
     # Configure PID Controller
     global pid
-    pid = PID(set.pidp, set.pidi, set.pidd, setpoint=set.blower_flow_set)
+    pid_config = config['pid_config']
+    pid = PID(pid_config['pidp'], pid_config['pidi'], pid_config['pidd'], setpoint=set.blower_flow_set)
     pid.output_limits = (-0.25, 0.25)
 
     # Set Variables

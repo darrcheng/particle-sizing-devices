@@ -31,7 +31,7 @@ def flow_update(handle, flow_read_input, flow_factor, flow_offset):
     slpm = []
     flow_measure_repeat = 0
     while flow_measure_repeat < 5:
-        flow_rate = (ljm.eReadName(handle, flow_read_input) - flow_offset) / flow_factor
+        flow_rate = (ljm.eReadName(handle, flow_read_input) - flow_offset) * flow_factor
         slpm.append(flow_rate)
         # tFactor = (temp_update(handle, temp_input) + 273.15) / 273.15
         # pFactor = 100 / (100 + press_update(handle, press_input))
@@ -46,16 +46,9 @@ def hv_update(handle, voltage_monitor_input, voltage_factor, voltage_offset):
     """Returns HV montior reading, 5 averaged readings 1 ms apart"""
     voltage_list = []
     voltage_measure_repeat = 0
-<<<<<<< HEAD
-    while voltage_measure_repeat < 10:
-        sensor_voltage = ljm.eReadName(handle, voltage_monitor_input) * 1000
-        corrected_voltage = (sensor_voltage - 11.578)/1.1183
-        voltage.append(corrected_voltage)
-=======
     while voltage_measure_repeat < 5:
-        voltage = ljm.eReadName(handle, voltage_monitor_input) * voltage_factor - voltage_offset
+        voltage = (ljm.eReadName(handle, voltage_monitor_input) - voltage_offset)* voltage_factor 
         voltage_list.append(voltage)
->>>>>>> abbf373ec12baea022921102877aafa9a4013c66
         time.sleep(0.001)
         voltage_measure_repeat += 1
     avg_voltage = sum(voltage_list) / len(voltage_list)

@@ -1,5 +1,5 @@
 ---
-dma: "nanodma"
+dma: "longdma"
 low_voltage_lim: 0
 high_voltage_lim: 600
 labjack_io :
@@ -8,17 +8,17 @@ labjack_io :
   "press_input": "AIN2"
   "temp_input": "AIN3"
   "rh_input": "AIN4"
-  "voltage_set_output": "DAC0"
+  "voltage_set_output": "TDAC4"
   "flow_set_output": "TDAC2"
   "counter": "DIO18"
   "width": "DIO0"
 cpc_config:
-  "cpc_flowrate" : 5 # 300/60 cubic centimeters per second
+  "cpc_flowrate" : 16.6667 # 300/60 cubic centimeters per second
 voltage_set_config:
   "voltage_set_factor" : 2000 # 10000/5 (supply range)/5
 sensor_config:
   "temp_factor" : 0.01
-  "flow_factor" : 0.1714
+  "flow_factor" : 5.8343
   "flow_offset" : 0.9947
   "voltage_factor" : 894.2144
   "voltage_offset" : 0.011578
@@ -28,3 +28,7 @@ gui_config:
   "interval" : 100  # Number of steps in voltage cycle
   "voltage_update_time" : 5000  # Time between each voltage step
   "blower_flow_set" : 15 # LPM
+pid_config:
+  "pidp" : 0.4
+  "pidi" : 0.1
+  "pidd" : 0

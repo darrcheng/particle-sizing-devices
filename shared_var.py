@@ -10,11 +10,7 @@ pidp = 0.2  # PID Proportional Gain
 pidi = 0  # PID Integral Gain
 pidd = 0  # PID Derivative Gain
 control = 0  # PID Output
-<<<<<<< HEAD:settings.py
-blower_flow_set = 14  # Set Blower Flow Rate in [LPM]
-=======
 blower_flow_set = 0  # Set Blower Flow Rate in [LPM]
->>>>>>> abbf373ec12baea022921102877aafa9a4013c66:shared_var.py
 
 # Flow Measurement Variables
 flow_read = 0  # Measured flow rate
