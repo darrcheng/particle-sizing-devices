@@ -14,20 +14,19 @@ import cpccounting
 
 ####################Labjack Startup####################
 
-config_file = 'nano_config.yml'
-
-handle = ljm.openS("T7", "ANY", "ANY")
-info = ljm.getHandleInfo(handle)
-ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
-
-
-stop_threads = threading.Event()
-voltage_scan = threading.Event()
-
+config_file = 'long_config.yml'
 with open(config_file, "r") as f:
     config = yaml.safe_load(f)
 
 gui_config = config["gui_config"]
+
+handle = ljm.openS("T7", "ANY", config['labjack'])
+info = ljm.getHandleInfo(handle)
+ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
+
+stop_threads = threading.Event()
+voltage_scan = threading.Event()
+
 
 ####################TKinter Button Functions####################
 # Define callback function for update button in Tkinter GUI

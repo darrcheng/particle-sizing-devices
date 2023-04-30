@@ -19,10 +19,12 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
 
     # Configure pulse width in
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_CONFIG_A", 0)  # Set to one shot
+    ljm.eWriteName(handle, labjack_io["width"] + "_EF_CONFIG_A", 1)  # Set to one shot
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_INDEX", 5)  # Set input as pulse width
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_OPTIONS", 0)  # Set to clock 0
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 1)  # Enable pulse width
+
+    ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS",0)
 
     # Initialize time variables and previous count
     prev_time = time.monotonic()
@@ -32,11 +34,11 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
     aScanListNames = ["DIO0_EF_READ_A"]  # Scan list names to stream
     numAddresses = len(aScanListNames)
     aScanList = ljm.namesToAddresses(numAddresses, aScanListNames)[0]
-    ljm.eStreamStart(handle, 2000, numAddresses, aScanList, 2000)
+    ljm.eStreamStart(handle, 1000, numAddresses, aScanList, 2000)
 
     # Constants for update intervals
     curr_time = time.monotonic()
-    update_time = 1  # seconds
+    update_time = 0.5  # seconds
     while True:
         try:
             # Break out of loop on close

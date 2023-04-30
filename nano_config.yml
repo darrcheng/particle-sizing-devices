@@ -1,5 +1,6 @@
 ---
 dma: "nanodma"
+labjack : 470024288
 low_voltage_lim: 0
 high_voltage_lim: 600
 labjack_io :
@@ -13,7 +14,7 @@ labjack_io :
   "counter": "DIO18"
   "width": "DIO0"
 cpc_config:
-  "cpc_flowrate" : 16.66667 # 1200/60 cubic centimeters per second
+  "cpc_flowrate" : 0.5 # 1200/60 cubic centimeters per second
 voltage_set_config:
   "voltage_set_factor" : 200 # 10000/5 (supply range)/5
 sensor_config:

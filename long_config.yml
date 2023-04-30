@@ -1,5 +1,6 @@
 ---
 dma: "longdma"
+labjack : 470024266
 low_voltage_lim: 0
 high_voltage_lim: 600
 labjack_io :
@@ -29,6 +30,6 @@ gui_config:
   "voltage_update_time" : 5000  # Time between each voltage step
   "blower_flow_set" : 15 # LPM
 pid_config:
-  "pidp" : 0.4
-  "pidi" : 0.1
+  "pidp" : 0.2
+  "pidi" : 0
   "pidd" : 0
