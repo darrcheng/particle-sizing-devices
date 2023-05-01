@@ -35,6 +35,7 @@ diameter_mode = ""
 curr_count = 0
 concentration = 0
 pulse_width = 0
+pulse_width_error = 0
 # cpc_flowrate = 300 / 60  # cubic centimeters per second
 
 # # # Labjack Inputs

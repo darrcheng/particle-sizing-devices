@@ -35,6 +35,7 @@ def dataLogging(start_time, stop_threads, dma, file_e):
                 "Concentration[#/cc]",
                 "Counts [#]",
                 "Pulse Width [s]",
+                "Pulse Width Error [%]"
             ]
         )
         log_time = start_time
@@ -81,6 +82,7 @@ def dataLogging(start_time, stop_threads, dma, file_e):
                         shared_var.concentration,
                         shared_var.curr_count,
                         shared_var.pulse_width,
+                        shared_var.pulse_width_error
                     ]
                 )
 

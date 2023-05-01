@@ -15,7 +15,7 @@ import cpccounting
 
 ####################Labjack Startup####################
 
-config_file = "test_config.yml"
+config_file = "long_config.yml"
 with open(config_file, "r") as f:
     config = yaml.safe_load(f)
 
