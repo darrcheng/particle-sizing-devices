@@ -1,8 +1,6 @@
 ---
 dma: "nanodma"
 labjack : 470024288
-low_voltage_lim: 0
-high_voltage_lim: 600
 labjack_io :
   "flow_read_input": "AIN0"
   "voltage_monitor_input": "AIN1"
@@ -17,6 +15,9 @@ cpc_config:
   "cpc_flowrate" : 0.5 # 1200/60 cubic centimeters per second
 voltage_set_config:
   "voltage_set_factor" : 200 # 10000/5 (supply range)/5
+  "dma_outer_radius" : 1.905
+  "dma_inner_radius" : 0.937
+  "dma_length" : 4.987
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 3.9
@@ -24,11 +25,13 @@ sensor_config:
   "voltage_factor" : 200
   "voltage_offset" : 0
 gui_config:
-  "low_voltage_lim" : 0
-  "high_voltage_lim" : 600  
-  "interval" : 100  # Number of steps in voltage cycle
+  "low_dia_lim" : 1
+  "high_dia_lim" : 35  
+  "bins" : 50  # Number of steps in voltage cycle
   "voltage_update_time" : 5000  # Time between each voltage step
   "blower_flow_set" : 12 # LPM
+  "diameter_list" : [2.798,3.048,3.320,3.616,3.938,4.289,4.671,5.088,5.543,6.038,6.578,7.166,7.808,8.507,9.270,10.103,11.011,12.002,13.083,14.264,15.553,16.960,18.499,20.180,22.017,24.027,26.227,28.635,31.271,34.141,29.933,32.517]
+  "default_mode" : "dia_list"
 pid_config:
   "pidp" : 0.4
   "pidi" : 0.1
