@@ -20,12 +20,15 @@ press_read = 0  # Measured pressure
 
 # Voltage Cycle Settings
 voltageCycle = True  # Turn voltage cycling on and off
-low_voltage_lim = 0  # Lower Voltage Limit #V will be 100
-high_voltage_lim = 0  # Upper Voltage Limit #V will be 8000'
-interval = 0  # Number of steps in voltage cycle
+low_dia_lim = 0  # Lower Voltage Limit #V will be 100
+high_dia_lim = 0  # Upper Voltage Limit #V will be 8000'
+size_bins = 0  # Number of steps in voltage cycle
 voltage_update_time = 0  # Time between each voltage step
 ljvoltage_set_out = 0  # Labjack output to control HV supply
 voltage_monitor = 0  # Current voltage read from HV supply monitor
+set_diameter = 0
+dia_list = []
+diameter_mode = ""
 # voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
 # CPC Variables

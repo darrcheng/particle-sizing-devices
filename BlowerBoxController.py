@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from datetime import datetime  # Pulls current time from system
 from tkinter.constants import FALSE
 from labjack import ljm
@@ -14,15 +15,15 @@ import cpccounting
 
 ####################Labjack Startup####################
 
-config_file = 'long_config.yml'
+config_file = "test_config.yml"
 with open(config_file, "r") as f:
     config = yaml.safe_load(f)
 
 gui_config = config["gui_config"]
 
-handle = ljm.openS("T7", "ANY", config['labjack'])
+handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
-ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
+# ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
@@ -43,38 +44,6 @@ def voltageCycle_callback():
         voltageCycle_b.config(text="On")
 
 
-# Lower Voltage Limit Update
-def lvl_callback():
-    set.low_voltage_lim = lvl_e.get()
-
-
-# Upper Voltage Limit Update
-def uvl_callback():
-    set.high_voltage_lim = uvl_e.get()
-
-
-# Step Time Update
-def voltageUpdate_callback():
-    set.voltage_update_time = float(voltageUpdate_e.get())
-
-
-# Number of bins Update
-def bins_callback():
-    set.interval = bins_e.get()
-
-
-# Blower Flow Setpoint
-def blowerFlow_callback():
-    flow = blowerFlow_e.get()
-    set.blower_flow_set = int(flow)
-    # pid.setpoint = set.blower_flow_set
-
-
-# File Name Update
-def file_callback():
-    set.file = file_e.get()
-
-
 ####################Main Program Functions####################
 
 
@@ -82,10 +51,21 @@ def onStart():
     # Reconfigure Start Button to Stop Button
     start_b.configure(text="Stop", command=onClose)
 
+    # Pull in GUI settings
+    set.low_dia_lim = float(lvl_e.get())
+    set.high_dia_lim = float(uvl_e.get())
+    set.voltage_update_time = float(voltageUpdate_e.get())
+    set.size_bins = int(bins_e.get())
+    set.blower_flow_set = int(blowerFlow_e.get())
+    set.dia_list = dia_list_e.get().split(" ")
+    set.diameter_mode = dia_option.get()
+
     # Configure PID Controller
     global pid
-    pid_config = config['pid_config']
-    pid = PID(pid_config['pidp'], pid_config['pidi'], pid_config['pidd'], setpoint=set.blower_flow_set)
+    pid_config = config["pid_config"]
+    pid = PID(
+        pid_config["pidp"], pid_config["pidi"], pid_config["pidd"], setpoint=set.blower_flow_set
+    )
     pid.output_limits = (-0.25, 0.25)
 
     # Set Variables
@@ -95,6 +75,14 @@ def onStart():
     start_time = datetime.now()
 
     # Reveal the Monitoring controls
+    voltageSetPoint_label.pack()
+    voltageSetPoint_e.pack()
+    supplyVoltage_label.pack()
+    supplyVoltage_e.pack()
+    dia_label.pack()
+    dia_e.pack()
+    count_label.pack()
+    count_e.pack()
     temp_label.pack()
     temp_e.pack()
     rh_label.pack()
@@ -103,8 +91,6 @@ def onStart():
     p_e.pack()
     flow_label.pack()
     flow_e.pack()
-    count_label.pack()
-    count_e.pack()
 
     # Define and start threads
     global blower_thread
@@ -134,9 +120,9 @@ def onStart():
             voltage_scan,
             config["voltage_set_config"],
             voltageSetPoint_e,
+            dia_e,
         ),
     )
-
     global voltage_monitor_thread
     voltage_monitor_thread = threading.Thread(
         name="Voltage Monitor",
@@ -185,82 +171,82 @@ gui_settings.pack()
 # Create the TKinter widgets that allow for manual DMA Blower settings
 
 # Set Point Values Title
-setpoint_title = tk.Label(gui_settings, text="Set Point Values").grid(row=0, column=3)
+setpoint_title = tk.Label(
+    gui_settings, text="Set Point Values", font=("TkDefaultFont", 10, "bold")
+).grid(row=0, column=0, columnspan=3)
 
 # Lower Voltage Limit
-set.low_voltage_lim = gui_config["low_voltage_lim"]
-lvl_label = tk.Label(gui_settings, text="Lower Voltage Limit (V)").grid(row=1, column=0)
+dia_list_label = tk.Label(gui_settings, text="Diameter List (nm)").grid(row=1, column=0)
+dia_list_e = tk.Entry(gui_settings)
+dia_list_e.insert(0, gui_config["diameter_list"])
+dia_list_e.grid(row=1, column=1)
+
+# Lower Voltage Limit
+lvl_label = tk.Label(gui_settings, text="Lower Diameter Limit (nm)").grid(row=2, column=0)
 lvl_e = tk.Entry(gui_settings)
-lvl_e.insert(0, set.low_voltage_lim)
-lvl_b = tk.Button(gui_settings, text="Update", command=lvl_callback)
-lvl_e.grid(row=1, column=1)
-lvl_b.grid(row=1, column=2)
+lvl_e.insert(0, gui_config["low_dia_lim"])
+lvl_e.grid(row=2, column=1)
 
 # Upper Voltage Limit
-set.high_voltage_lim = gui_config["high_voltage_lim"]
-uvl_label = tk.Label(gui_settings, text="Upper Voltage Limit (V)").grid(row=1, column=4)
+uvl_label = tk.Label(gui_settings, text="Upper Diameter Limit (nm)").grid(row=3, column=0)
 uvl_e = tk.Entry(gui_settings)
-uvl_e.insert(0, set.high_voltage_lim)
-uvl_b = tk.Button(gui_settings, text="Update", command=uvl_callback)
-uvl_e.grid(row=1, column=5)
-uvl_b.grid(row=1, column=6)
+uvl_e.insert(0, gui_config["high_dia_lim"])
+uvl_e.grid(row=3, column=1)
 
 # Bins
-set.interval = gui_config["interval"]
-bins_label = tk.Label(gui_settings, text="Interval").grid(row=2, column=0)
+bins_label = tk.Label(gui_settings, text="Interval").grid(row=4, column=0)
 bins_e = tk.Entry(gui_settings)
-bins_e.insert(0, set.interval)
-bins_b = tk.Button(gui_settings, text="Update", command=bins_callback)
-bins_e.grid(row=2, column=1)
-bins_b.grid(row=2, column=2)
+bins_e.insert(0, gui_config["bins"])
+bins_e.grid(row=4, column=1)
 
 # Voltage Update
-set.voltage_update_time = gui_config["voltage_update_time"]
-voltageUpdate_label = tk.Label(gui_settings, text="Voltage Update Time (ms)").grid(row=2, column=4)
+voltageUpdate_label = tk.Label(gui_settings, text="Interval Update Time (ms)").grid(row=5, column=0)
 voltageUpdate_e = tk.Entry(gui_settings)
-voltageUpdate_e.insert(0, set.voltage_update_time)
-voltageUpdate_b = tk.Button(gui_settings, text="Update", command=voltageUpdate_callback)
-voltageUpdate_e.grid(row=2, column=5)
-voltageUpdate_b.grid(row=2, column=6)
+voltageUpdate_e.insert(0, gui_config["voltage_update_time"])
+voltageUpdate_e.grid(row=5, column=1)
 
 # Blower Flow Rate
-set.blower_flow_set = gui_config["blower_flow_set"]
-blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=3, column=3)
+blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=6, column=0)
 blowerFlow_e = tk.Entry(gui_settings)
-blowerFlow_e.insert(0, set.blower_flow_set)
-blowerFlow_b = tk.Button(gui_settings, text="Update", command=blowerFlow_callback)
-blowerFlow_e.grid(row=4, column=3)
-blowerFlow_b.grid(row=4, column=4)
+blowerFlow_e.insert(0, gui_config["blower_flow_set"])
+blowerFlow_e.grid(row=6, column=1)
 
 # File Location
 data_storage_label = tk.Label(gui_settings, text="Data Storage (File Location)").grid(
-    row=5, column=3
+    row=7, column=0, columnspan=3
 )
 file_e = tk.Entry(gui_settings, width=70)
-file_e.grid(row=6, column=3)
+file_e.grid(row=8, column=0, columnspan=3)
+
+# Radiobutton
+dia_option = tk.StringVar()
+dia_option.set(gui_config["default_mode"])
+ttk.Radiobutton(gui_settings, text="Diameter List", variable=dia_option, value="dia_list").grid(
+    row=1, column=2
+)
+ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="interval").grid(
+    row=2, column=2
+)
+
 
 # Voltage Cycle Button
-voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=1, column=3)
+voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=4, column=2)
 voltageCycle_b = tk.Button(gui_settings, text="On", command=voltageCycle_callback)
-voltageCycle_b.grid(row=2, column=3)
-
-# Current Set Voltage
-voltageSetPoint_label = tk.Label(gui_settings, text="Set Voltage").grid(row=3, column=5)
-voltageSetPoint_e = tk.Entry(gui_settings)
-voltageSetPoint_e.insert(0, set.ljvoltage_set_out)
-voltageSetPoint_e.grid(row=4, column=5)
-
-# Current Monitor Voltage
-supplyVoltage_label = tk.Label(gui_settings, text="Supply Voltage").grid(row=5, column=5)
-supplyVoltage_e = tk.Entry(gui_settings)
-supplyVoltage_e.insert(0, set.voltage_monitor)
-supplyVoltage_e.grid(row=6, column=5)
+voltageCycle_b.grid(row=5, column=2)
 
 # Start Button
-start_b = tk.Button(gui_settings, text="Run", command=onStart)
-start_b.grid(row=9, column=3)
+start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)
+start_b.grid(row=9, column=0, columnspan=3)
 
 ####################Initally Hidden Tkinter Widgets####################
+
+# Current Set Voltage
+voltageSetPoint_label = tk.Label(runtime, text="Set Voltage")
+voltageSetPoint_e = tk.Entry(runtime)
+
+# Current Monitor Voltage
+supplyVoltage_label = tk.Label(runtime, text="Supply Voltage")
+supplyVoltage_e = tk.Entry(runtime)
 
 # Define current temperature label
 temp_label = tk.Label(runtime, text="Temperature (C)")
@@ -278,7 +264,11 @@ p_e = tk.Entry(runtime)
 flow_label = tk.Label(runtime, text="Flow sLPM")
 flow_e = tk.Entry(runtime)
 
-# Define flow rate label
+# Define diameter label
+dia_label = tk.Label(runtime, text="Diameter (nm)")
+dia_e = tk.Entry(runtime)
+
+# Define cpc count label
 count_label = tk.Label(runtime, text="Counts #/cc")
 count_e = tk.Entry(runtime)
 
