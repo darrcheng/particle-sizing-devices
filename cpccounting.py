@@ -71,12 +71,12 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
 
             # Extract the pulse width from the stream data
             if raw_pulse_width > 0:
-                print("dammit")
                 shared_var.pulse_width = (
-                    raw_pulse_width / 80e6 * ((count - prev_count) / (pulses - pulse_error))
+                    raw_pulse_width  * ((count - prev_count) / (pulses - pulse_error))
                 )
-                print("Max Error: ", pulse_counter * 50e-9 / shared_var.pulse_width * 100, " %")
-
+                if shared_var.pulse_width > 0:
+                # print("Max Error: ", pulse_error * 50e-9 / shared_var.pulse_width * 100, " %")
+                    shared_var.pulse_width_error = pulse_error * 50e-9 / shared_var.pulse_width * 100
             else:
                 shared_var.pulse_width = 0
 
