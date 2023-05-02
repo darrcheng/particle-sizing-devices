@@ -177,53 +177,56 @@ gui_settings.pack()
 ####################Tkinter Widgdets####################
 # Create the TKinter widgets that allow for manual DMA Blower settings
 
+# Heading
+tk.Label(gui_settings,text = config['dma'],font= ("TkDefaultFont",12,"bold")).grid(row=0,column=0,columnspan=3)
+
 # Set Point Values Title
 setpoint_title = tk.Label(
     gui_settings, text="Set Point Values", font=("TkDefaultFont", 10, "bold")
-).grid(row=0, column=0, columnspan=3)
+).grid(row=1, column=0, columnspan=3)
 
 # Lower Voltage Limit
-dia_list_label = tk.Label(gui_settings, text="Diameter List (nm)").grid(row=1, column=0)
+dia_list_label = tk.Label(gui_settings, text="Diameter List (nm)").grid(row=2, column=0)
 dia_list_e = tk.Entry(gui_settings)
 dia_list_e.insert(0, gui_config["diameter_list"])
-dia_list_e.grid(row=1, column=1)
+dia_list_e.grid(row=2, column=1)
 
 # Lower Voltage Limit
-lvl_label = tk.Label(gui_settings, text="Lower Diameter Limit (nm)").grid(row=2, column=0)
+lvl_label = tk.Label(gui_settings, text="Lower Diameter Limit (nm)").grid(row=3, column=0)
 lvl_e = tk.Entry(gui_settings)
 lvl_e.insert(0, gui_config["low_dia_lim"])
-lvl_e.grid(row=2, column=1)
+lvl_e.grid(row=3, column=1)
 
 # Upper Voltage Limit
-uvl_label = tk.Label(gui_settings, text="Upper Diameter Limit (nm)").grid(row=3, column=0)
+uvl_label = tk.Label(gui_settings, text="Upper Diameter Limit (nm)").grid(row=4, column=0)
 uvl_e = tk.Entry(gui_settings)
 uvl_e.insert(0, gui_config["high_dia_lim"])
-uvl_e.grid(row=3, column=1)
+uvl_e.grid(row=4, column=1)
 
 # Bins
-bins_label = tk.Label(gui_settings, text="Interval").grid(row=4, column=0)
+bins_label = tk.Label(gui_settings, text="Interval").grid(row=5, column=0)
 bins_e = tk.Entry(gui_settings)
 bins_e.insert(0, gui_config["bins"])
-bins_e.grid(row=4, column=1)
+bins_e.grid(row=5, column=1)
 
 # Voltage Update
-voltageUpdate_label = tk.Label(gui_settings, text="Interval Update Time (ms)").grid(row=5, column=0)
+voltageUpdate_label = tk.Label(gui_settings, text="Interval Update Time (ms)").grid(row=6, column=0)
 voltageUpdate_e = tk.Entry(gui_settings)
 voltageUpdate_e.insert(0, gui_config["voltage_update_time"])
-voltageUpdate_e.grid(row=5, column=1)
+voltageUpdate_e.grid(row=6, column=1)
 
 # Blower Flow Rate
-blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=6, column=0)
+blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=7, column=0)
 blowerFlow_e = tk.Entry(gui_settings)
 blowerFlow_e.insert(0, gui_config["blower_flow_set"])
-blowerFlow_e.grid(row=6, column=1)
+blowerFlow_e.grid(row=7, column=1)
 
 # File Location
 data_storage_label = tk.Label(gui_settings, text="Data Storage (File Location)").grid(
-    row=7, column=0, columnspan=3
+    row=8, column=0, columnspan=3
 )
 file_e = tk.Entry(gui_settings, width=70)
-file_e.grid(row=8, column=0, columnspan=3)
+file_e.grid(row=9, column=0, columnspan=3)
 
 # Radiobutton
 dia_option = tk.StringVar()
@@ -243,7 +246,7 @@ voltageCycle_b.grid(row=5, column=2)
 
 # Start Button
 start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)
-start_b.grid(row=9, column=0, columnspan=3)
+start_b.grid(row=10, column=0, columnspan=3)
 
 ####################Initally Hidden Tkinter Widgets####################
 

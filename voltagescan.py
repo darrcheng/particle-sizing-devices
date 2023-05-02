@@ -82,7 +82,7 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
                     ljm.eWriteName(
                         handle,
                         labjack_io["voltage_set_output"],
-                        ljvoltage / voltage_config["voltage_set_factor"],
+                        ljvoltage / voltage_config["voltage_set_factor"] - voltage_config["voltage_offset_calibration"],
                     )
                     shared_var.ljvoltage_set_out = ljvoltage
                     voltageSetPoint_e.delete(0, "end")
