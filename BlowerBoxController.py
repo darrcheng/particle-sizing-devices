@@ -6,6 +6,8 @@ from labjack import ljm
 from simple_pid import PID
 import threading
 import yaml
+import sys
+import os
 
 import blowercontrol
 import shared_var as set
@@ -15,10 +17,15 @@ import cpccounting
 
 ####################Labjack Startup####################
 
-config_file = "long_config.yml"
-with open(config_file, "r") as f:
-    config = yaml.safe_load(f)
+if len(sys.argv) > 1:
+    config_file = sys.argv[1]
+else:
+    config_file = "long_config.yml"
 
+program_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(program_path, config_file), "r") as f:
+    config = yaml.safe_load(f)
 gui_config = config["gui_config"]
 
 handle = ljm.openS("T7", "ANY", config["labjack"])
