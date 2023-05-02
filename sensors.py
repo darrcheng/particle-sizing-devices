@@ -42,14 +42,14 @@ def flow_update(handle, flow_read_input, flow_factor, flow_offset):
 
 
 # Returns HV Supply Voltage
-def hv_update(handle, voltage_monitor_input, voltage_factor, voltage_offset, polynom_offset):
+def hv_update(handle, voltage_monitor_input, voltage_factor, voltage_offset):
     """Returns HV montior reading, 5 averaged readings 1 ms apart"""
     voltage_list = []
     voltage_measure_repeat = 0
     while voltage_measure_repeat < 5:
         #voltage = ((ljm.eReadName(handle, voltage_monitor_input))**2)*polynom_offset + voltage_factor*(ljm.eReadName(handle, voltage_monitor_input)) + voltage_offset
-        #voltage = (ljm.eReadName(handle, voltage_monitor_input) - voltage_offset)* voltage_factor 
-        voltage = (ljm.eReadName(handle, voltage_monitor_input))*((polynom_offset)*(ljm.eReadName(handle, voltage_monitor_input)) + voltage_factor) + voltage_offset
+        voltage = (ljm.eReadName(handle, voltage_monitor_input) - voltage_offset)* voltage_factor 
+        #voltage = (ljm.eReadName(handle, voltage_monitor_input))*((polynom_offset)*(ljm.eReadName(handle, voltage_monitor_input)) + voltage_factor) + voltage_offset
         voltage_list.append(voltage)
         print(ljm.eReadName(handle, voltage_monitor_input))
         print(voltage)
