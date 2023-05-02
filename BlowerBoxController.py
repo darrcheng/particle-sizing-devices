@@ -20,7 +20,7 @@ import cpccounting
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
 else:
-    config_file = "long_config.yml"
+    config_file = "nano_config.yml"
 
 program_path = os.path.dirname(os.path.realpath(__file__))
 
