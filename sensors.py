@@ -47,8 +47,12 @@ def hv_update(handle, voltage_monitor_input, voltage_factor, voltage_offset):
     voltage_list = []
     voltage_measure_repeat = 0
     while voltage_measure_repeat < 5:
+        #voltage = ((ljm.eReadName(handle, voltage_monitor_input))**2)*polynom_offset + voltage_factor*(ljm.eReadName(handle, voltage_monitor_input)) + voltage_offset
         voltage = (ljm.eReadName(handle, voltage_monitor_input) - voltage_offset)* voltage_factor 
+        #voltage = (ljm.eReadName(handle, voltage_monitor_input))*((polynom_offset)*(ljm.eReadName(handle, voltage_monitor_input)) + voltage_factor) + voltage_offset
         voltage_list.append(voltage)
+        print(ljm.eReadName(handle, voltage_monitor_input))
+        print(voltage)
         time.sleep(0.001)
         voltage_measure_repeat += 1
     avg_voltage = sum(voltage_list) / len(voltage_list)
