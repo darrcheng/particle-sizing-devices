@@ -140,6 +140,7 @@ def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
                 labjack_io["voltage_monitor_input"],
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
+                sensor_config["polynom_offset"]
             )
             supplyVoltage_e.delete(0, "end")
             supplyVoltage_e.insert(0, shared_var.voltage_monitor)

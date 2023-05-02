@@ -30,7 +30,7 @@ gui_config = config["gui_config"]
 
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
-# ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
+# ljm.eWriteName(handle, "AIN1_RANGE", 10.0)
 
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
