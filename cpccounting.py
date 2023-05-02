@@ -52,6 +52,11 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
             shared_var.curr_count = count - prev_count
+
+            # Calculate the elapsed time since the last count
+            count_time = time.monotonic()
+            elapsed_time = count_time - prev_time
+
             # settings.pulse_width = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
             # settings.pulse_width = 0
             # data = ljm.eStreamRead(handle)
@@ -60,35 +65,38 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             pulses = 0
             pulse_error = 0
             pulse_counter = time.monotonic()
-            while time.monotonic() - pulse_counter < 0.8:
-                pulse_width_single = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
-                if pulse_width_single < 1:
-                    pulse_width_list.append(pulse_width_single)
+            shared_var.pulse_width_error = 0
+
+            if count > 1e6:
+                while time.monotonic() - pulse_counter < 0.8:
+                    pulse_width_single = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
+                    if pulse_width_single < 1:
+                        pulse_width_list.append(pulse_width_single)
+                    else:
+                        pulse_error = pulse_error + 1
+                    pulses = pulses + 1
+                raw_pulse_width = sum(pulse_width_list)
+
+                # Extract the pulse width from the stream data
+                if raw_pulse_width > 0:
+                    shared_var.pulse_width = raw_pulse_width * (
+                        (count - prev_count) / (pulses - pulse_error)
+                    )
+                    if shared_var.pulse_width > 0:
+                        # print("Max Error: ", pulse_error * 50e-9 / shared_var.pulse_width * 100, " %")
+                        shared_var.pulse_width_error = (
+                            pulse_error * 50e-9 / shared_var.pulse_width * 100
+                        )
                 else:
-                    pulse_error = pulse_error + 1
-                pulses = pulses + 1
-            raw_pulse_width = sum(pulse_width_list)
+                    shared_var.pulse_width = 0
 
-            # Extract the pulse width from the stream data
-            if raw_pulse_width > 0:
-                shared_var.pulse_width = (
-                    raw_pulse_width  * ((count - prev_count) / (pulses - pulse_error))
+                # Calculate the count rate in pulses per second
+                shared_var.concentration = (count - prev_count) / (
+                    (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
                 )
-                if shared_var.pulse_width > 0:
-                # print("Max Error: ", pulse_error * 50e-9 / shared_var.pulse_width * 100, " %")
-                    shared_var.pulse_width_error = pulse_error * 50e-9 / shared_var.pulse_width * 100
             else:
-                shared_var.pulse_width = 0
-
-            # Calculate the elapsed time since the last count
-            count_time = time.monotonic()
-            elapsed_time = count_time - prev_time
-
-            # Calculate the count rate in pulses per second
-            shared_var.concentration = (count - prev_count) / (
-                (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
-            )
-            dead_time = shared_var.pulse_width
+                shared_var.pulse_width = -9999
+                shared_var.pulse_width = -9999
 
             # Display the count rate in the label widget
             count_e.delete(0, "end")
