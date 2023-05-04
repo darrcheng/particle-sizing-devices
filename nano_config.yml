@@ -12,9 +12,10 @@ labjack_io :
   "counter": "DIO18"
   "width": "DIO0"
 cpc_config:
-  "cpc_flowrate" : 0.5 # 1200/60 cubic centimeters per second
+  "cpc_flowrate" : 0.6667 # 1200/60 cubic centimeters per second
 voltage_set_config:
-  "voltage_set_factor" : 200 # 10000/5 (supply range)/5
+  "voltage_set_factor" : 500 # 10000/5 (supply range)/5
+  "voltage_offset_calibration" : 0
   "dma_outer_radius" : 1.905
   "dma_inner_radius" : 0.937
   "dma_length" : 4.987
@@ -22,7 +23,7 @@ sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 3.9
   "flow_offset" : 0.7043
-  "voltage_factor" : 200
+  "voltage_factor" : 500
   "voltage_offset" : 0
 gui_config:
   "low_dia_lim" : 1
