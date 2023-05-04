@@ -78,7 +78,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
 
                 # Calculate the true pulse width from counts and measured pulse width
                 # print(pulses-pulse_error)
-                if raw_pulse_width > 0 and (pulses-pulse_error)>0:
+                if raw_pulse_width > 0 and (pulses - pulse_error) > 0:
                     shared_var.pulse_width = raw_pulse_width * (
                         (count - prev_count) / (pulses - pulse_error)
                     )
@@ -114,6 +114,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
+                print("Slow: CPC Pulse Counting")
             time.sleep(next_time)
 
         except BaseException as e:

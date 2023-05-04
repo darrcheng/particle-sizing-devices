@@ -5,7 +5,7 @@ import shared_var
 import os
 
 
-def dataLogging(start_time, stop_threads, dma, file_e):
+def dataLogging(start_time, stop_threads, b, dma, file_e):
     # Create the subfolder with current date and time
     current_datetime = time.strftime("%Y-%m-%d")
     subfolder_path = os.path.join(os.getcwd(), current_datetime)
@@ -13,8 +13,10 @@ def dataLogging(start_time, stop_threads, dma, file_e):
 
     # Create CSV file and writer
     file_datetime = time.strftime("%Y%m%d_%H%M%S")
-    csv_filename = dma + file_datetime + ".csv"
+    csv_filename = dma + "_" + file_datetime + ".csv"
     csv_filepath = os.path.join(subfolder_path, csv_filename)
+    csv_filename2 = dma + "_invert_" + file_datetime + ".csv"
+    csv_filepath2 = os.path.join(subfolder_path, csv_filename2)
     file_e.insert(0, csv_filepath)
 
     # Open CSV logging file
@@ -42,7 +44,10 @@ def dataLogging(start_time, stop_threads, dma, file_e):
     count = 0
     start = time.monotonic()
 
-    scan_data = []
+    scan_data_dia = []
+    scan_data_conc = []
+    current_diameter = []
+    current_conc = []
     previous_diameter = 0
 
     # Constants for update intervals
@@ -61,8 +66,10 @@ def dataLogging(start_time, stop_threads, dma, file_e):
             count += 1
             log_elapsed = time.monotonic() - start
 
+            b.wait()
+
             # Write line by line data to CSV file
-            with open(csv_filepath, mode="w", newline="") as data_file:
+            with open(csv_filepath, mode="a", newline="") as data_file:
                 data_writer = csv.writer(data_file, delimiter=",")
                 data_writer.writerow(
                     [
@@ -84,15 +91,57 @@ def dataLogging(start_time, stop_threads, dma, file_e):
                 )
 
             # Write aggregated data to CSV file
-            if scan_data:
-                if abs(shared_var.set_diameter) > previous_diameter:
+            if scan_data_dia:
+                if shared_var.set_diameter == previous_diameter:
+                    # Averaging over current diameter
+                    current_diameter.append(shared_var.set_diameter)
+                    current_conc.append(shared_var.concentration)
+                elif abs(shared_var.set_diameter) > previous_diameter:
+                    # When diameter increases, save previous diameter data
+                    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
+                    current_diameter = []
+                    current_diameter.append(shared_var.set_diameter)
+
+                    scan_data_conc.append(sum(current_conc) / len(current_conc))
+                    current_conc = []
+                    current_conc.append(shared_var.concentration)
+
                     previous_diameter = shared_var.set_diameter
+                else:
+                    # When one scan finishes, save row to file and reset
+                    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
+                    scan_data_conc.append(sum(current_conc) / len(current_conc))
+
+                    with open(csv_filepath2, mode="a", newline="") as data_file:
+                        data_writer = csv.writer(data_file, delimiter=",")
+                        data_writer.writerow(scan_data_dia + scan_data_conc)
+
+                    scan_data_dia = []
+                    scan_data_dia.append(datetime.now())
+                    current_diameter = []
+                    current_diameter.append(shared_var.set_diameter)
+
+                    scan_data_conc = []
+                    current_conc = []
+                    current_conc.append(shared_var.concentration)
+
+                    previous_diameter = shared_var.set_diameter
+                    print("new_line")
+            else:
+                # First loop
+                scan_data_dia.append(datetime.now())
+                current_diameter.append(shared_var.set_diameter)
+                current_conc.append(shared_var.concentration)
+                previous_diameter = shared_var.set_diameter
+
+            b.reset()
 
             # Schedule the next update
             curr_time = curr_time + update_time
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
+                print("Slow: Data Logging")
             time.sleep(next_time)
 
         except BaseException as e:

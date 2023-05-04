@@ -30,19 +30,19 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
                 handle, labjack_io["temp_input"], sensor_config["temp_factor"]
             )
             temp_e.delete(0, "end")
-            temp_e.insert(0, shared_var.temp_read)
+            temp_e.insert(0, "%.2f" % shared_var.temp_read)
 
             # Read RH, correct for temperature and update GUI
             shared_var.rh_read = sensors.rh_update(
                 handle, labjack_io["rh_input"], shared_var.temp_read
             )
             rh_e.delete(0, "end")
-            rh_e.insert(0, shared_var.rh_read)
+            rh_e.insert(0, "%.2f" % shared_var.rh_read)
 
             # Read Pressure and update GUI
             shared_var.press_read = sensors.press_update(handle, labjack_io["press_input"])
             p_e.delete(0, "end")
-            p_e.insert(0, shared_var.press_read)
+            p_e.insert(0, "%.2f" % shared_var.press_read)
 
             # Read Flow Rate and update GUI
             shared_var.flow_read = sensors.flow_update(
@@ -52,7 +52,7 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
                 sensor_config["flow_offset"],
             )
             flow_e.delete(0, "end")
-            flow_e.insert(0, shared_var.flow_read)
+            flow_e.insert(0, "%.2f" % shared_var.flow_read)
 
             # PID Function
             control = 0.016 * shared_var.blower_flow_set + 1.8885 + pid(shared_var.flow_read)

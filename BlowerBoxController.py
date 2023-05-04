@@ -21,7 +21,7 @@ import cpccounting
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
 else:
-    config_file = "nano_config.yml"
+    config_file = "test_config.yml"
 
 # Load config file
 program_path = os.path.dirname(os.path.realpath(__file__))
@@ -36,6 +36,7 @@ info = ljm.getHandleInfo(handle)
 # Create threading events setting flags to control other flags
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
+b = threading.Barrier(2)
 
 
 ####################TKinter Button Functions####################
@@ -122,6 +123,7 @@ def onStart():
             handle,
             config["labjack_io"],
             stop_threads,
+            b,
             voltage_scan,
             config["voltage_set_config"],
             voltageSetPoint_e,
@@ -138,7 +140,7 @@ def onStart():
     data_logging_thread = threading.Thread(
         name="Data Logging",
         target=datalogging.dataLogging,
-        args=(start_time, stop_threads, config["dma"], file_e),
+        args=(start_time, stop_threads, b, config["dma"], file_e),
     )
     global cpc_counting_thread
     cpc_counting_thread = threading.Thread(
