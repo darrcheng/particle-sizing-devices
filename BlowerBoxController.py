@@ -15,23 +15,25 @@ import datalogging
 import voltagescan
 import cpccounting
 
-####################Labjack Startup####################
+####################Startup####################
 
+# Allow config file to be passed from .bat file or directly from code
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
 else:
     config_file = "long_config.yml"
 
+# Load config file
 program_path = os.path.dirname(os.path.realpath(__file__))
-
 with open(os.path.join(program_path, config_file), "r") as f:
     config = yaml.safe_load(f)
 gui_config = config["gui_config"]
 
+# Load Labjack
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
-# ljm.eWriteName(handle, "AIN1_RANGE", 1.0)
 
+# Create threading events setting flags to control other flags
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
 
@@ -40,8 +42,6 @@ voltage_scan = threading.Event()
 # Define callback function for update button in Tkinter GUI
 # Voltage Cycle Button
 # Switches between True and False and changes button text
-
-
 def voltageCycle_callback():
     if voltage_scan.is_set() == False:
         voltage_scan.set()
@@ -52,8 +52,6 @@ def voltageCycle_callback():
 
 
 ####################Main Program Functions####################
-
-
 def onStart():
     # Reconfigure Start Button to Stop Button
     start_b.configure(text="Stop", command=onClose)

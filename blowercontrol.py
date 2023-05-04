@@ -9,7 +9,6 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
     """Reads in sheath flow sensors, updates GUI and executes the PID control"""
 
     # Set flow to 0 LPM and pause to allow blower to slow down
-    # tdac_flow.update(0,0)
     ljm.eWriteName(handle, labjack_io["flow_set_output"], 0)
     time.sleep(5)
 
@@ -55,9 +54,9 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
             flow_e.delete(0, "end")
             flow_e.insert(0, shared_var.flow_read)
 
-
             # PID Function
             control = 0.016 * shared_var.blower_flow_set + 1.8885 + pid(shared_var.flow_read)
+
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)
 

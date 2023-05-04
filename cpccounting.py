@@ -24,13 +24,12 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_OPTIONS", 0)  # Set to clock 0
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 1)  # Enable pulse width
 
-    ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
-
     # Initialize time variables and previous count
     prev_time = time.monotonic()
     prev_count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
 
     # # Initalize streaming for pulse width
+    # ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
     # aScanListNames = ["DIO0_EF_READ_A"]  # Scan list names to stream
     # numAddresses = len(aScanListNames)
     # aScanList = ljm.namesToAddresses(numAddresses, aScanListNames)[0]
@@ -46,9 +45,6 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
                 print("Shutdown: CPC Pulse Counting")
                 break
 
-            # Get the current UTC time
-            utc_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
             shared_var.curr_count = count - prev_count
@@ -57,18 +53,20 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             count_time = time.monotonic()
             elapsed_time = count_time - prev_time
 
-            # settings.pulse_width = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
-            # settings.pulse_width = 0
+            # # Read in stream pulse width data
             # data = ljm.eStreamRead(handle)
 
+            # Clear variables used measuring pulse width
             pulse_width_list = []
             pulses = 0
             pulse_error = 0
             pulse_counter = time.monotonic()
             shared_var.pulse_width_error = 0
 
-            if count > 1e6:
-                while time.monotonic() - pulse_counter < 0.8:
+            # If counts are too high, don't pulse count
+            if count < 1e6:
+                # Repeatedly measure the pulse width and keep an error counter
+                while time.monotonic() - pulse_counter < update_time * 0.8:
                     pulse_width_single = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
                     if pulse_width_single < 1:
                         pulse_width_list.append(pulse_width_single)
@@ -77,13 +75,13 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
                     pulses = pulses + 1
                 raw_pulse_width = sum(pulse_width_list)
 
-                # Extract the pulse width from the stream data
+                # Calculate the true pulse width from counts and measured pulse width
                 if raw_pulse_width > 0:
                     shared_var.pulse_width = raw_pulse_width * (
                         (count - prev_count) / (pulses - pulse_error)
                     )
+                    # Calculate error assuming pulse errors are due to short pulses
                     if shared_var.pulse_width > 0:
-                        # print("Max Error: ", pulse_error * 50e-9 / shared_var.pulse_width * 100, " %")
                         shared_var.pulse_width_error = (
                             pulse_error * 50e-9 / shared_var.pulse_width * 100
                         )
@@ -95,7 +93,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
                     (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
                 )
             else:
-                shared_var.pulse_width = -9999
+                shared_var.concentration = -9999
                 shared_var.pulse_width = -9999
 
             # Display the count rate in the label widget

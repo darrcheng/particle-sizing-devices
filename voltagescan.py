@@ -8,21 +8,22 @@ import sensors
 
 # Controls the DMA voltage scanning
 def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSetPoint_e, dia_e):
-    # Calculate voltages based on diameters
+    # Calculate voltages based on diameter list or ln spaced dimaeters
     mean_free_path = 0.0651  # um
     charge = 1.60e-19  # coloumbs
     dyn_viscosity = 1.72e-05  # kg/(m*s)
     dma_length = voltage_config["dma_length"]  # cm
     dma_outer_radius = voltage_config["dma_outer_radius"]  # cm
     dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
-    dma_sheath = 10000  # sccm
+    dma_sheath = shared_var.blower_flow_set * 1000  # sccm
     if shared_var.diameter_mode == "dia_list":
         diameters = np.array(shared_var.dia_list, dtype=float)
     else:
         diameters = np.logspace(
             np.log10(shared_var.low_dia_lim),
             np.log10(shared_var.high_dia_lim),
-            shared_var.size_bins,
+            num=shared_var.size_bins,
+            base=np.exp(1),
         )
     diameters = diameters / 1000  # nm -> um
     slip_correction = 1 + 2 * mean_free_path / diameters * (
@@ -36,13 +37,8 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
         / (4 * np.pi * dma_length * elec_mobility)
         * np.log(dma_outer_radius / dma_inner_radius)
     )
-    # voltage = int(shared_var.low_dia_lim)
-    # increment = shared_var.size_bins
-    # labjackVoltage = voltage / voltage_config["voltage_set_factor"]
-    # labjackIncrement = increment / voltage_config["voltage_set_factor"]
-    # bins = (shared_var.high_dia_lim - shared_var.low_dia_lim) / shared_var.size_bins
 
-    # Constants for flow intervals
+    # Constants for voltage scanning intervals
     curr_time = time.monotonic()
     update_time = shared_var.voltage_update_time / 1000  # seconds
 
@@ -63,9 +59,6 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
                 # Constants for voltage intervals
                 voltage_time = datetime.now()
                 voltage_count = 0
-
-                # Reset Labjack Voltage
-                # labjackVoltage = 0
 
                 # Loop through voltages between upper and lower limits
                 for ljvoltage, curr_diameter in zip(set_voltages, diameters):
@@ -88,18 +81,27 @@ def hv(handle, labjack_io, stop_threads, voltage_scan, voltage_config, voltageSe
                     voltageSetPoint_e.delete(0, "end")
                     voltageSetPoint_e.insert(0, shared_var.ljvoltage_set_out)
 
+                    # Update GUI with diameter
                     shared_var.set_diameter = curr_diameter * 1000
                     dia_e.delete(0, "end")
                     dia_e.insert(0, shared_var.set_diameter)
 
+                    # delay_time_start = time.monotonic()
+                    # # Delay until the voltage monitor matches the input
+                    # while (shared_var.voltage_monitor < 0.95 * ljvoltage) or (
+                    #     shared_var.voltage_monitor > 1.05 * ljvoltage
+                    # ):
+                    #     time.sleep(0.1)
+                    # delay_time = time.monotonic() - delay_time_start
+                    # print(delay_time)
+                    delay_time = 0
+
                     # Schedule the next update
-                    curr_time = curr_time + update_time
-                    next_time = curr_time + update_time - time.monotonic()
+                    curr_time = curr_time + update_time + delay_time
+                    next_time = curr_time + update_time + delay_time - time.monotonic()
                     if next_time < 0:
                         next_time = 0
                     time.sleep(next_time)
-
-                    # labjackVoltage += labjackIncrement
 
             # If voltage cycle is turned off, set HV supply to paused voltage
             while voltage_scan.is_set() == True:
