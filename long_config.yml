@@ -25,7 +25,6 @@ sensor_config:
   "flow_offset" : 0.9947
   "voltage_factor" : 894.2144
   "voltage_offset" : 0.011578
-  #"polynom_offset" : -39.981
 gui_config:
   "low_dia_lim" : 10
   "high_dia_lim" : 600  
