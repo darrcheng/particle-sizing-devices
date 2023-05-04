@@ -35,38 +35,35 @@ def dataLogging(start_time, stop_threads, dma, file_e):
                 "Concentration[#/cc]",
                 "Counts [#]",
                 "Pulse Width [s]",
-                "Pulse Width Error [%]"
+                "Pulse Width Error [%]",
             ]
         )
-        log_time = start_time
-        log_elapsed = 0
-        count = 0
-        start = time.monotonic()
+    log_elapsed = 0
+    count = 0
+    start = time.monotonic()
 
-        # Constants for update intervals
-        curr_time = time.monotonic()
-        update_time = 1  # seconds
+    scan_data = []
+    previous_diameter = 0
 
-        # Infinite Loop
-        while True:
-            try:
-                # Break out of loop on program close
-                if stop_threads.is_set() == True:
-                    print("Shutdown: Data Logging")
-                    break
+    # Constants for update intervals
+    curr_time = time.monotonic()
+    update_time = 1  # seconds
 
-                # Increment count and elasped time
-                count += 1
-                log_elapsed = time.monotonic() - start
+    # Infinite Loop
+    while True:
+        try:
+            # Break out of loop on program close
+            if stop_threads.is_set() == True:
+                print("Shutdown: Data Logging")
+                break
 
-                # Schedule the next update
-                curr_time = curr_time + update_time
-                next_time = curr_time + update_time - time.monotonic()
-                if next_time < 0:
-                    next_time = 0
-                time.sleep(next_time)
+            # Increment count and elasped time
+            count += 1
+            log_elapsed = time.monotonic() - start
 
-                # Write Data to CSV file
+            # Write line by line data to CSV file
+            with open(csv_filepath, mode="w", newline="") as data_file:
+                data_writer = csv.writer(data_file, delimiter=",")
                 data_writer.writerow(
                     [
                         count,
@@ -82,11 +79,23 @@ def dataLogging(start_time, stop_threads, dma, file_e):
                         shared_var.concentration,
                         shared_var.curr_count,
                         shared_var.pulse_width,
-                        shared_var.pulse_width_error
+                        shared_var.pulse_width_error,
                     ]
                 )
 
-            except BaseException as e:
-                print("Data Logging Error")
-                print(e)
-                break
+            # Write aggregated data to CSV file
+            if scan_data:
+                if abs(shared_var.set_diameter) > previous_diameter:
+                    previous_diameter = shared_var.set_diameter
+
+            # Schedule the next update
+            curr_time = curr_time + update_time
+            next_time = curr_time + update_time - time.monotonic()
+            if next_time < 0:
+                next_time = 0
+            time.sleep(next_time)
+
+        except BaseException as e:
+            print("Data Logging Error")
+            print(e)
+            break
