@@ -76,7 +76,8 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
                 raw_pulse_width = sum(pulse_width_list)
 
                 # Calculate the true pulse width from counts and measured pulse width
-                if raw_pulse_width > 0:
+                # print(pulses-pulse_error)
+                if raw_pulse_width > 0 and (pulses-pulse_error)>0:
                     shared_var.pulse_width = raw_pulse_width * (
                         (count - prev_count) / (pulses - pulse_error)
                     )
@@ -89,9 +90,12 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
                     shared_var.pulse_width = 0
 
                 # Calculate the count rate in pulses per second
-                shared_var.concentration = (count - prev_count) / (
-                    (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
-                )
+                if elapsed_time - shared_var.pulse_width > 0:
+                    shared_var.concentration = (count - prev_count) / (
+                        (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
+                    )
+                else:
+                    shared_var.concentration = -9999
             else:
                 shared_var.concentration = -9999
                 shared_var.pulse_width = -9999
