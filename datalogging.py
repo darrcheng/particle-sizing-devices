@@ -3,6 +3,7 @@ import time
 import csv
 import shared_var
 import os
+import numpy as np
 
 
 def dataLogging(start_time, stop_threads, b, dma, file_e):
@@ -95,26 +96,39 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                 if shared_var.set_diameter == previous_diameter:
                     # Averaging over current diameter
                     current_diameter.append(shared_var.set_diameter)
-                    current_conc.append(shared_var.concentration)
+                    if shared_var.concentration == -9999:
+                        pass
+                    else:
+                        current_conc.append(shared_var.concentration)
+                        invert_data()
                 elif abs(shared_var.set_diameter) > previous_diameter:
                     # When diameter increases, save previous diameter data
+                    previous_diameter = shared_var.set_diameter
+
                     scan_data_dia.append(sum(current_diameter) / len(current_diameter))
                     current_diameter = []
                     current_diameter.append(shared_var.set_diameter)
 
-                    scan_data_conc.append(sum(current_conc) / len(current_conc))
+                    if scan_data_conc:
+                        scan_data_conc.append(sum(current_conc) / len(current_conc))
                     current_conc = []
-                    current_conc.append(shared_var.concentration)
+                    if shared_var.concentration == -9999:
+                        pass
+                    else:
+                        current_conc.append(shared_var.concentration)
 
-                    previous_diameter = shared_var.set_diameter
                 else:
                     # When one scan finishes, save row to file and reset
+                    print(dma)
                     scan_data_dia.append(sum(current_diameter) / len(current_diameter))
-                    scan_data_conc.append(sum(current_conc) / len(current_conc))
+                    if scan_data_conc:
+                        scan_data_conc.append(sum(current_conc) / len(current_conc))
 
                     with open(csv_filepath2, mode="a", newline="") as data_file:
                         data_writer = csv.writer(data_file, delimiter=",")
                         data_writer.writerow(scan_data_dia + scan_data_conc)
+
+                    previous_diameter = shared_var.set_diameter
 
                     scan_data_dia = []
                     scan_data_dia.append(datetime.now())
@@ -123,10 +137,11 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
 
                     scan_data_conc = []
                     current_conc = []
-                    current_conc.append(shared_var.concentration)
+                    if shared_var.concentration == -9999:
+                        pass
+                    else:
+                        current_conc.append(shared_var.concentration)
 
-                    previous_diameter = shared_var.set_diameter
-                    print("new_line")
             else:
                 # First loop
                 scan_data_dia.append(datetime.now())
@@ -141,10 +156,50 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
-                print("Slow: Data Logging")
+                print("Slow: Data Logging" + datetime.now())
             time.sleep(next_time)
 
         except BaseException as e:
             print("Data Logging Error")
             print(e)
             break
+
+
+def invert_data():
+    mean_free_path = 0.0651  # um
+    charge = 1.60e-19  # coloumbs
+    dyn_viscosity = 1.72e-05  # kg/(m*s)
+    q_a = 1500  # ccm
+    q_s = 1500  # ccm
+    q_c = 15000  # ccm
+    q_m = 15000  # ccm
+    # dma_length = voltage_config["dma_length"]  # cm
+    # dma_outer_radius = voltage_config["dma_outer_radius"]  # cm
+    # dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
+    # dma_sheath = shared_var.blower_flow_set * 1000  # sccm
+    # if shared_var.diameter_mode == "dia_list":
+    #     diameters = np.array(shared_var.dia_list, dtype=float)
+    #     shared_var.size_bins = len(diameters)
+    #     shared_var.low_dia_lim = min(diameters)
+    #     shared_var.high_dia_lim = max(diameters)
+    # else:
+    #     diameters = np.logspace(
+    #         np.log(shared_var.low_dia_lim),
+    #         np.log(shared_var.high_dia_lim),
+    #         num=shared_var.size_bins,
+    #         base=np.exp(1),
+    #     )
+    #     print(diameters)
+    diameters = np.array([shared_var.low_dia_lim, shared_var.high_dia_lim])
+    diameters = diameters / 1000  # nm -> um
+    slip_correction = 1 + 2 * mean_free_path / diameters * (
+        1.257 + 0.4 * np.exp((-1.1 * diameters) / (2 * mean_free_path))
+    )
+    elec_mobility = (
+        (charge * slip_correction) / (3 * np.pi * dyn_viscosity * diameters * 1e-6) * 1e4
+    )
+    dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
+    dlnDp = np.log(diameters[1]) - np.log(diameters[0])
+    a_star = -dlnZp / dlnDp
+    beta = (q_s + q_a) / (q_m + q_c)
+    delta = (q_s - q_a) / (q_s + q_a)

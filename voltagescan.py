@@ -76,7 +76,7 @@ def hv(handle, labjack_io, stop_threads, b, voltage_scan, voltage_config, voltag
                         next_time = curr_time + update_time + delay_time - time.monotonic()
                         if next_time < 0:
                             next_time = 0
-                            print("Slow: Voltage Set")
+                            print("Slow: Voltage Set" + datetime.now())
                         time.sleep(next_time)
 
             # If voltage cycle is turned off, set HV supply to paused voltage
@@ -109,6 +109,9 @@ def calc_voltages(voltage_config):
     dma_sheath = shared_var.blower_flow_set * 1000  # sccm
     if shared_var.diameter_mode == "dia_list":
         diameters = np.array(shared_var.dia_list, dtype=float)
+        shared_var.size_bins = len(diameters)
+        shared_var.low_dia_lim = min(diameters)
+        shared_var.high_dia_lim = max(diameters)
     else:
         diameters = np.logspace(
             np.log(shared_var.low_dia_lim),
@@ -161,7 +164,7 @@ def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
-                print("Slow: Voltage Monitor")
+                print("Slow: Voltage Monitor" + datetime.now())
             time.sleep(next_time)
 
         except BaseException as e:
