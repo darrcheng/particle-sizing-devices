@@ -67,6 +67,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
             count += 1
             log_elapsed = time.monotonic() - start
 
+            print("datalogging wait")
             b.wait()
 
             # Write line by line data to CSV file
@@ -149,6 +150,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                 previous_diameter = shared_var.set_diameter
 
             b.reset()
+            print("barrier reset")
 
             # Schedule the next update
             curr_time = curr_time + update_time
@@ -213,6 +215,7 @@ def invert_data(N, d_p):
 
 
 def calc_charged_frac(charge, d_nm):
+    # Wiedensohler 1988
     a_coeff = {
         -2: [-26.3328, 35.9044, -21.4608, 7.0867, -1.3088, 0.1051],
         -1: [-2.3197, 0.6175, 0.6201, -0.1105, -0.1260, 0.0297],

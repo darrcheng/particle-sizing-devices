@@ -69,6 +69,7 @@ def hv(handle, labjack_io, stop_threads, b, voltage_scan, voltage_config, voltag
                         # print(delay_time)
                         delay_time = 0
 
+                        print("voltage scan wait")
                         b.wait()
 
                         # Schedule the next update
