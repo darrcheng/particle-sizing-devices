@@ -76,7 +76,7 @@ def hv(handle, labjack_io, stop_threads, b, voltage_scan, voltage_config, voltag
                         next_time = curr_time + update_time + delay_time - time.monotonic()
                         if next_time < 0:
                             next_time = 0
-                            print("Slow: Voltage Set" + datetime.now())
+                            print("Slow: Voltage Set" + str(datetime.now()))
                         time.sleep(next_time)
 
             # If voltage cycle is turned off, set HV supply to paused voltage
@@ -164,7 +164,7 @@ def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
-                print("Slow: Voltage Monitor" + datetime.now())
+                print("Slow: Voltage Monitor" + str(datetime.now()))
             time.sleep(next_time)
 
         except BaseException as e:

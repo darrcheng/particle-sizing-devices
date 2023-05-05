@@ -156,7 +156,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
                 next_time = 0
-                print("Slow: Data Logging" + datetime.now())
+                print("Slow: Data Logging" + str(datetime.now()))
             time.sleep(next_time)
 
         except BaseException as e:
@@ -165,7 +165,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
             break
 
 
-def invert_data():
+def invert_data(N, d_p):
     mean_free_path = 0.0651  # um
     charge = 1.60e-19  # coloumbs
     dyn_viscosity = 1.72e-05  # kg/(m*s)
@@ -173,6 +173,7 @@ def invert_data():
     q_s = 1500  # ccm
     q_c = 15000  # ccm
     q_m = 15000  # ccm
+    charge = -1
     # dma_length = voltage_config["dma_length"]  # cm
     # dma_outer_radius = voltage_config["dma_outer_radius"]  # cm
     # dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
@@ -203,3 +204,25 @@ def invert_data():
     a_star = -dlnZp / dlnDp
     beta = (q_s + q_a) / (q_m + q_c)
     delta = (q_s - q_a) / (q_s + q_a)
+    charge_frac = calc_charged_frac(-1, d_p)
+    cpc_active_eff = d_p * 1
+    penetrate_eff = d_p * 1
+    dNdlnDp = (N * a_star) / (
+        (q_a / q_s) * beta * (1 + delta) * charge_frac * cpc_active_eff * penetrate_eff
+    )
+    return dNdlnDp
+
+
+def calc_charged_frac(charge, d_nm):
+    a_coeff = {
+        -2: [-26.3328, 35.9044, -21.4608, 7.0867, -1.3088, 0.1051],
+        -1: [-2.3197, 0.6175, 0.6201, -0.1105, -0.1260, 0.0297],
+        0: [-0.0003, -0.1014, 0.3073, -0.3372, 0.1023, -0.0105],
+        1: [-2.3484, 0.6044, 0.4800, 0.0013, -0.1553, 0.0320],
+        2: [-44.4756, 79.3772, -62.8900, 26.4492, -5.7480, 0.5049],
+    }
+    power_sum = []
+    for i in range(6):
+        power_sum.append((a_coeff[charge][i] * np.log10(d_nm) ** i))
+    charged_frac = 10 ** sum(power_sum)
+    return charged_frac
