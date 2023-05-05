@@ -109,7 +109,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                     current_diameter = []
                     current_diameter.append(shared_var.set_diameter)
 
-                    if scan_data_conc:
+                    if current_conc:
                         scan_data_conc.append(sum(current_conc) / len(current_conc))
                     current_conc = []
                     if shared_var.concentration == -9999:
@@ -121,7 +121,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                     # When one scan finishes, save row to file and reset
                     print(dma)
                     scan_data_dia.append(sum(current_diameter) / len(current_diameter))
-                    if scan_data_conc:
+                    if current_conc:
                         scan_data_conc.append(sum(current_conc) / len(current_conc))
 
                     with open(csv_filepath2, mode="a", newline="") as data_file:
