@@ -100,7 +100,6 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                         pass
                     else:
                         current_conc.append(shared_var.concentration)
-                        invert_data()
                 elif abs(shared_var.set_diameter) > previous_diameter:
                     # When diameter increases, save previous diameter data
                     previous_diameter = shared_var.set_diameter
