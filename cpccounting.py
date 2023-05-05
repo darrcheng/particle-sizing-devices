@@ -111,7 +111,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             prev_time = count_time
             prev_count = count
 
-            shared_var.cpc_counting_runtime = time.monotonic() - curr_time
+            shared_var.cpc_counting_runtime = time.monotonic() - curr_time - update_time
 
             # Schedule the next update
             curr_time = curr_time + update_time

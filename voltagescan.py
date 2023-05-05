@@ -72,7 +72,7 @@ def hv(handle, labjack_io, stop_threads, b, voltage_scan, voltage_config, voltag
                         print("voltage scan wait")
                         b.wait()
 
-                        shared_var.voltage_runtime = curr_time - time.monotonic()
+                        shared_var.voltage_runtime = time.monotonic() - curr_time - update_time
 
                         # Schedule the next update
                         curr_time = curr_time + update_time + delay_time
@@ -162,7 +162,7 @@ def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
             supplyVoltage_e.delete(0, "end")
             supplyVoltage_e.insert(0, "%.2f" % shared_var.voltage_monitor)
 
-            shared_var.voltage_monitor_runtime = time.monotonic() - curr_time
+            shared_var.voltage_monitor_runtime = time.monotonic() - curr_time - update_time
 
             # Schedule the next update
             curr_time = curr_time + update_time

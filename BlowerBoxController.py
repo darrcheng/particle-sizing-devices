@@ -33,6 +33,10 @@ gui_config = config["gui_config"]
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
 
+value = 100
+print("Setting LJM_USB_SEND_RECEIVE_TIMEOUT_MS to %.00f milliseconds\n" % value)
+LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
+
 # Create threading events setting flags to control other flags
 stop_threads = threading.Event()
 voltage_scan = threading.Event()

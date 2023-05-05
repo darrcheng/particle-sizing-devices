@@ -162,7 +162,7 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
             b.reset()
             print("barrier reset")
 
-            shared_var.data_logging_runtime = time.monotonic() - curr_time
+            shared_var.data_logging_runtime = time.monotonic() - curr_time - update_time
 
             # Schedule the next update
             curr_time = curr_time + update_time
