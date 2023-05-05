@@ -38,6 +38,13 @@ pulse_width = 0
 pulse_width_error = 0
 # cpc_flowrate = 300 / 60  # cubic centimeters per second
 
+# Runtime
+blower_runtime = 0
+voltage_runtime = 0
+voltage_monitor_runtime = 0
+data_logging_runtime = 0
+cpc_counting_runtime = 0
+
 # # # Labjack Inputs
 # flow_read_input = "AIN0"
 # voltage_monitor_input = "AIN1"

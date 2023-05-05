@@ -68,7 +68,9 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             if shared_var.curr_count < 1e6:
                 # Repeatedly measure the pulse width and keep an error counter
                 while time.monotonic() - pulse_counter < update_time * 0.8:
-                    pulse_width_single = ljm.eReadName(handle, labjack_io["width"] + "_EF_READ_A_F")
+                    pulse_width_single = ljm.eReadName(
+                        handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
+                    )
                     if pulse_width_single < 1:
                         pulse_width_list.append(pulse_width_single)
                     else:
@@ -108,6 +110,8 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             # Set the previous count and time for the next iteration
             prev_time = count_time
             prev_count = count
+
+            shared_var.cpc_counting_runtime = time.monotonic() - curr_time
 
             # Schedule the next update
             curr_time = curr_time + update_time

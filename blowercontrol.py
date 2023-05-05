@@ -60,6 +60,8 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
             # Set blower voltage
             ljm.eWriteName(handle, labjack_io["flow_set_output"], control)
 
+            shared_var.blower_runtime = time.monotonic() - curr_time
+
             # Schedule the next update
             curr_time = curr_time + flow_update_time
             next_time = curr_time + flow_update_time - time.monotonic()

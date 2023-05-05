@@ -39,6 +39,11 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                 "Counts [#]",
                 "Pulse Width [s]",
                 "Pulse Width Error [%]",
+                "Blower Control Runtime [s]",
+                "Voltage Update Runtime [s]",
+                "Voltage Monitor Runtime [s]",
+                "CPC Counting Runtime [s]",
+                "Datalogging Runtime[s]",
             ]
         )
     log_elapsed = 0
@@ -89,6 +94,11 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
                         shared_var.curr_count,
                         shared_var.pulse_width,
                         shared_var.pulse_width_error,
+                        shared_var.blower_runtime,
+                        shared_var.voltage_runtime,
+                        shared_var.voltage_monitor_runtime,
+                        shared_var.cpc_counting_runtime,
+                        shared_var.data_logging_runtime,
                     ]
                 )
 
@@ -151,6 +161,8 @@ def dataLogging(start_time, stop_threads, b, dma, file_e):
 
             b.reset()
             print("barrier reset")
+
+            shared_var.data_logging_runtime = time.monotonic() - curr_time
 
             # Schedule the next update
             curr_time = curr_time + update_time
