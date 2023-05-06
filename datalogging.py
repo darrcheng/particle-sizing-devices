@@ -45,6 +45,17 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
             print("datalogging wait")
             b.wait()
 
+            # Calculate Diameter
+            calculated_dia = calc_dia_from_voltage(
+                shared_var.voltage_monitor,
+                shared_var.blower_runtime * 1000,
+                shared_var.blower_runtime * 1000,
+                voltage_config["dma_length"],
+                voltage_config["dma_outer_radius"],
+                voltage_config["dma_inner_radius"],
+                shared_var.set_diameter,
+            )
+
             # Write line by line data to CSV file
             with open(csv_filepath, mode="a", newline="") as data_file:
                 data_writer = csv.writer(data_file, delimiter=",")
@@ -54,6 +65,7 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
                         datetime.now(),
                         log_elapsed,
                         shared_var.set_diameter,
+                        calculated_dia,
                         shared_var.ljvoltage_set_out,
                         shared_var.voltage_monitor,
                         shared_var.flow_read,
@@ -71,17 +83,6 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
                         shared_var.data_logging_runtime,
                     ]
                 )
-            print(shared_var.voltage_monitor)
-            # Calculate Diameter
-            calculated_dia = calc_dia_from_voltage(
-                shared_var.voltage_monitor,
-                shared_var.blower_runtime * 1000,
-                shared_var.blower_runtime * 1000,
-                voltage_config["dma_length"],
-                voltage_config["dma_outer_radius"],
-                voltage_config["dma_inner_radius"],
-            )
-            print(calculated_dia)
 
             # Write aggregated data to CSV file
             if scan_data_dia:
@@ -185,6 +186,7 @@ def create_files(dma, file_e):
                 "Timer",
                 "Elapsed Time",
                 "Set Diameter [nm]",
+                "Calculated Diameter [nm]",
                 "Set Voltage [V]",
                 "Actual Voltage[V]",
                 "Flow Rate [LPM]",
@@ -346,7 +348,7 @@ def calc_mobility_from_dia(d_nm):
     return elec_mobility_cm
 
 
-def calc_dia_from_mobility(elec_mobility_cm):
+def calc_dia_from_mobility(elec_mobility_cm, d_set):
     def calc_mobility_from_dia1(d_nm):
         """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
         q = 1.60217663e-19  # C [1 elementary charge]
@@ -368,13 +370,13 @@ def calc_dia_from_mobility(elec_mobility_cm):
             * 1e4
         )
 
-    sol = scipy.optimize.fsolve(calc_mobility_from_dia1, 1)
+    sol = scipy.optimize.fsolve(calc_mobility_from_dia1, d_set)
     return sol[0]
 
 
-def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm):
+def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm, d_set):
     elec_mobility_cm = calc_mobility_from_voltage(
         volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
     )
-    d_nm = calc_dia_from_mobility(elec_mobility_cm)
+    d_nm = calc_dia_from_mobility(elec_mobility_cm, d_set)
     return d_nm
