@@ -14,17 +14,16 @@ def blower(handle, labjack_io, stop_threads, sensor_config, pid, temp_e, rh_e, p
 
     # Constants for flow intervals
     curr_time = time.monotonic()
-    flow_update_time = 0.200  # seconds
+    flow_update_time = 0.500  # seconds
     # flow_count = 0
 
     # Infinite Loop
     while True:
+        # Break out of loop on close
+        if stop_threads.is_set() == True:
+            print("Shutdown: Sheath Flow Sensors")
+            break
         try:
-            # Break out of loop on close
-            if stop_threads.is_set() == True:
-                print("Shutdown: Sheath Flow Sensors")
-                break
-
             # Read temperature and update GUI
             shared_var.temp_read = sensors.temp_update(
                 handle, labjack_io["temp_input"], sensor_config["temp_factor"]

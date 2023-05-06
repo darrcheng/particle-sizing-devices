@@ -8,6 +8,7 @@ import threading
 import yaml
 import sys
 import os
+import time
 
 import blowercontrol
 import shared_var as set
@@ -144,7 +145,7 @@ def onStart():
     data_logging_thread = threading.Thread(
         name="Data Logging",
         target=datalogging.dataLogging,
-        args=(start_time, stop_threads, b, config["dma"], file_e),
+        args=(stop_threads, b, config["dma"], config["voltage_set_config"], file_e),
     )
     global cpc_counting_thread
     cpc_counting_thread = threading.Thread(
@@ -169,6 +170,7 @@ def onClose():
     stopThreads = True
     stop_threads.set()
     # ljm.close(handle)
+    # time.sleep(1)
     runtime.destroy()
 
 

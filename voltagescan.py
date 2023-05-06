@@ -18,12 +18,11 @@ def hv(handle, labjack_io, stop_threads, b, voltage_scan, voltage_config, voltag
     repeat_count = 0
 
     while True:
+        # Break out of loop on close
+        if stop_threads.is_set() == True:
+            print("Shutdown: Voltage Set")
+            break
         try:
-            # Break out of loop on close
-            if stop_threads.is_set() == True:
-                print("Shutdown: Voltage Set")
-                break
-
             # If voltageCycle is on, cycle through voltages
             while voltage_scan.is_set() == False:
                 # Break out of loop on close
@@ -143,15 +142,14 @@ def calc_voltages(voltage_config):
 def vIn(handle, labjack_io, stop_threads, sensor_config, supplyVoltage_e):
     # Constants for flow intervals
     curr_time = time.monotonic()
-    update_time = 0.200  # seconds
+    update_time = 0.500  # seconds
 
     while True:
+        # Break out of loop on program close
+        if stop_threads.is_set() == True:
+            print("Shutdown: Voltage Monitor")
+            break
         try:
-            # Break out of loop on program close
-            if stop_threads.is_set() == True:
-                print("Shutdown: Voltage Monitor")
-                break
-
             # Read in HV supply voltage and update GUI
             shared_var.voltage_monitor = sensors.hv_update(
                 handle,

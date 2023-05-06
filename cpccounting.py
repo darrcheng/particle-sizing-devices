@@ -39,12 +39,11 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
     curr_time = time.monotonic()
     update_time = 1  # seconds
     while True:
+        # Break out of loop on close
+        if stop_threads.is_set() == True:
+            print("Shutdown: CPC Pulse Counting")
+            break
         try:
-            # Break out of loop on close
-            if stop_threads.is_set() == True:
-                print("Shutdown: CPC Pulse Counting")
-                break
-
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
             shared_var.curr_count = count - prev_count
@@ -122,7 +121,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
             time.sleep(next_time)
 
         except BaseException as e:
-            print("CPC Pulse Counting Error")
+            print("CPC Pulse Counting Error", e)
             print(e)
             break
 
