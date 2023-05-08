@@ -7,7 +7,7 @@ import numpy as np
 import scipy.optimize
 
 
-def dataLogging(stop_threads, b, dma, voltage_config, file_e):
+def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
     # Create the subfolder with current date and time
     start_time, csv_filepath, csv_filepath2 = create_files(dma, file_e)
     log_elapsed = 0
@@ -27,11 +27,7 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
     update_time = 1  # seconds
 
     # Infinite Loop
-    while True:
-        # Break out of loop on program close
-        if stop_threads.is_set() == True:
-            print("Shutdown: Data Logging")
-            break
+    while not stop_threads.is_set():
         try:
             # Create new file on new day
             if datetime.now().day != start_time.day:
@@ -44,7 +40,7 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
             count += 1
             log_elapsed = time.monotonic() - start
 
-            print("datalogging wait")
+            # print("datalogging wait")
             b.wait()
 
             # Calculate Diameter
@@ -122,7 +118,7 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
 
                 else:
                     # When one scan finishes, save row to file and reset
-                    print(dma)
+                    # print(dma)
                     current_diameter, current_conc, current_dndlndp = average_diameter_repeats(
                         scan_data_dia,
                         scan_data_conc,
@@ -156,7 +152,7 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
                 previous_diameter = shared_var.set_diameter
 
             b.reset()
-            print("barrier reset")
+            # print("barrier reset")
 
             shared_var.data_logging_runtime = time.monotonic() - curr_time - update_time
 
@@ -172,6 +168,8 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
             print("Data Logging Error")
             print(e)
             break
+    print("Shutdown: Data Logging")
+    close_barrier.wait()
 
 
 def average_diameter_repeats(
