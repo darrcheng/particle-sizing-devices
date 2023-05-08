@@ -16,6 +16,10 @@ import datalogging
 import voltagescan
 import cpccounting
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+
 
 def my_excepthook(type):  # , value, traceback):
     # Write variables to file
@@ -335,6 +339,44 @@ voltageCycle_b.grid(row=5, column=2)
 # Start Button
 start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)
 start_b.grid(row=10, column=0, columnspan=3)
+
+############# Graph
+from matplotlib.figure import Figure
+
+# Create a figure and axis for the contourf plot
+fig = Figure(figsize=(5, 4), dpi=100)
+ax = fig.add_subplot()
+# fig, ax = plt.subplots()
+canvas = FigureCanvasTkAgg(fig, master=runtime)
+canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+
+# Create a function to update the contourf plot
+def update_contourf():
+    # Generate new random data for the contourf plot
+    x = np.linspace(-3, 3, 100)
+    y = np.linspace(-3, 3, 100)
+    X, Y = np.meshgrid(x, y)
+    Z = np.sin(np.sqrt(X**2 + Y**2)) * np.random.rand(100, 100)
+
+    # Clear the axis and plot the new data
+    ax.clear()
+    ax.contourf(X, Y, Z, cmap="coolwarm")
+    ax.set_title("Contourf Plot")
+
+    # Redraw the canvas
+    canvas.draw()
+
+    # Schedule the function to be called again after 10 seconds
+    runtime.after(10000, update_contourf)
+
+
+# Call the update_contourf function to start the updating process
+update_contourf()
+
+# Run the tkinter main loop
+# root.mainloop()
+
 
 ####################Initally Hidden Tkinter Widgets####################
 
