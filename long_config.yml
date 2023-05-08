@@ -19,6 +19,9 @@ voltage_set_config:
   "dma_outer_radius" : 1.92659
   "dma_inner_radius" : 0.94266
   "dma_length" : 44.348
+  "dma_eff_length": 13 # [m]
+  "dma_sample_flow" : 1000 #[sccm]
+  "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
@@ -29,7 +32,7 @@ gui_config:
   "low_dia_lim" : 10
   "high_dia_lim" : 600  
   "bins" : 50  # Number of steps in voltage cycle
-  "voltage_update_time" : 5000  # Time between each voltage step
+  "voltage_update_time" : 10000  # Time between each voltage step
   "blower_flow_set" : 10 # LPM
   "diameter_list" : [8.933,9.506,10.116,10.764,11.455,12.190,12.972,13.804,14.689,15.631,16.634,17.701,18.837,20.045,21.331,22.699,24.155,25.705,27.353,29.108,30.975,32.962,35.077,37.327,39.721,42.269,44.980,47.866,50.936,54.203,57.680,61.380,65.318,69.508,73.966,78.711,83.760,89.133,94.850,100.935,107.409,114.299,121.631,129.433,137.736,146.571,155.973,165.978,176.625,187.955,200.012,212.842,226.495,241.024,256.484,272.937,290.445,309.076,328.902,350.000]
   "default_mode" : "dia_list"

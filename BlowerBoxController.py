@@ -8,6 +8,7 @@ import threading
 import yaml
 import sys
 import os
+import time
 
 import blowercontrol
 import shared_var as set
@@ -15,13 +16,40 @@ import datalogging
 import voltagescan
 import cpccounting
 
+
+def my_excepthook(type):  # , value, traceback):
+    # Write variables to file
+    with open(time.strftime("%Y%m%d_%H%M%S") + "_error.txt", "w") as f:
+        f.write("Globals:\n")
+        for name in globals():
+            if not name.startswith("__"):
+                value = eval(name)
+                f.write(f"{name} = {value}\n")
+        f.write("\n")
+        f.write("\nLocals:\n")
+        for name, value in locals().items():
+            if not name.startswith("__"):
+                f.write(f"{name} = {value}\n")
+        f.write("\n")
+        f.write("Imported module variables:\n")
+        for name in dir(set):
+            if not name.startswith("__"):
+                myvalue = eval(f"set.{name}")
+                f.write(f"{name} = {myvalue}\n")
+        f.write("\n")
+
+
+# Set the excepthook
+threading.excepthook = my_excepthook
+
+
 ####################Startup####################
 
 # Allow config file to be passed from .bat file or directly from code
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
 else:
-    config_file = "nano_config.yml"
+    config_file = "test_config.yml"
 
 # Load config file
 program_path = os.path.dirname(os.path.realpath(__file__))
@@ -33,9 +61,15 @@ gui_config = config["gui_config"]
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
 
+value = 1
+print("Setting LJM_USB_SEND_RECEIVE_TIMEOUT_MS to %.00f milliseconds\n" % value)
+LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
+
 # Create threading events setting flags to control other flags
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
+datalog_barrier = threading.Barrier(2)
+close_barrier = threading.Barrier(6)
 
 
 ####################TKinter Button Functions####################
@@ -106,6 +140,7 @@ def onStart():
             handle,
             config["labjack_io"],
             stop_threads,
+            close_barrier,
             config["sensor_config"],
             pid,
             temp_e,
@@ -122,6 +157,8 @@ def onStart():
             handle,
             config["labjack_io"],
             stop_threads,
+            datalog_barrier,
+            close_barrier,
             voltage_scan,
             config["voltage_set_config"],
             voltageSetPoint_e,
@@ -132,19 +169,40 @@ def onStart():
     voltage_monitor_thread = threading.Thread(
         name="Voltage Monitor",
         target=voltagescan.vIn,
-        args=(handle, config["labjack_io"], stop_threads, config["sensor_config"], supplyVoltage_e),
+        args=(
+            handle,
+            config["labjack_io"],
+            stop_threads,
+            close_barrier,
+            config["sensor_config"],
+            supplyVoltage_e,
+        ),
     )
     global data_logging_thread
     data_logging_thread = threading.Thread(
         name="Data Logging",
         target=datalogging.dataLogging,
-        args=(start_time, stop_threads, config["dma"], file_e),
+        args=(
+            stop_threads,
+            datalog_barrier,
+            close_barrier,
+            config["dma"],
+            config["voltage_set_config"],
+            file_e,
+        ),
     )
     global cpc_counting_thread
     cpc_counting_thread = threading.Thread(
         name="CPC Counting",
         target=cpccounting.cpc_conc,
-        args=(handle, config["labjack_io"], stop_threads, config["cpc_config"], count_e),
+        args=(
+            handle,
+            config["labjack_io"],
+            stop_threads,
+            close_barrier,
+            config["cpc_config"],
+            count_e,
+        ),
     )
     blower_thread.start()
     voltage_scan_thread.start()
@@ -162,8 +220,38 @@ def onClose():
     global stopThreads
     stopThreads = True
     stop_threads.set()
-    # ljm.close(handle)
+    # time.sleep(1)
+    # stop_threads.set()
+    close_barrier.wait()
+    # print(cpc_counting_thread.is_alive())
+    ljm.close(handle)
+
+    # time.sleep(1)
     runtime.destroy()
+
+
+# Program to update gui
+def update_gui():
+    count_e.delete(0, "end")
+    # print("here?")
+    count_e.insert(0, set.concentration)
+    rh_e.delete(0, "end")
+    rh_e.insert(0, "%.2f" % set.rh_read)
+    flow_e.delete(0, "end")
+    flow_e.insert(0, "%.2f" % set.flow_read)
+    temp_e.delete(0, "end")
+    temp_e.insert(0, "%.2f" % set.temp_read)
+    p_e.delete(0, "end")
+    p_e.insert(0, "%.2f" % set.press_read)
+    dia_e.delete(0, "end")
+    dia_e.insert(0, "%.2f" % set.set_diameter)
+    voltageSetPoint_e.delete(0, "end")
+    voltageSetPoint_e.insert(0, "%.2f" % set.ljvoltage_set_out)
+    supplyVoltage_e.delete(0, "end")
+    supplyVoltage_e.insert(0, "%.2f" % set.voltage_monitor)
+
+    runtime.update()
+    runtime.after(1000, update_gui)
 
 
 ####################GUI Creation####################
@@ -281,6 +369,8 @@ dia_e = tk.Entry(runtime)
 # Define cpc count label
 count_label = tk.Label(runtime, text="Counts #/cc")
 count_e = tk.Entry(runtime)
+
+runtime.after(1000, update_gui)
 
 #############################################################
 # Populate the root window with navigation buttons
