@@ -1,6 +1,7 @@
 import labjack.ljm as ljm
 import time
 import shared_var
+import sys
 
 
 def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
@@ -122,9 +123,7 @@ def cpc_conc(handle, labjack_io, stop_threads, cpc_config, count_e):
 
         except BaseException as e:
             print("CPC Pulse Counting Error", e)
-            print(e)
-            break
-
+            raise
     ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
     ljm.eWriteName(handle, labjack_io["counter"] + "_EF_ENABLE", 0)  # Disable high-speed counter
     # ljm.eStreamStop(handle)

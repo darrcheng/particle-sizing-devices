@@ -16,6 +16,33 @@ import datalogging
 import voltagescan
 import cpccounting
 
+
+def my_excepthook(type):  # , value, traceback):
+    # Write variables to file
+    with open("error.txt", "w") as f:
+        f.write("Globals:\n")
+        for name in globals():
+            if not name.startswith("__"):
+                value = eval(name)
+                f.write(f"{name} = {value}\n")
+        f.write("\n")
+        f.write("\nLocals:\n")
+        for name, value in locals().items():
+            if not name.startswith("__"):
+                f.write(f"{name} = {value}\n")
+        f.write("\n")
+        f.write("Imported module variables:\n")
+        for name in dir(set):
+            if not name.startswith("__"):
+                myvalue = eval(f"set.{name}")
+                f.write(f"{name} = {myvalue}\n")
+        f.write("\n")
+
+
+# Set the excepthook
+threading.excepthook = my_excepthook
+
+
 ####################Startup####################
 
 # Allow config file to be passed from .bat file or directly from code

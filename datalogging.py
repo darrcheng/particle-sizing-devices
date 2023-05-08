@@ -16,8 +16,10 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
 
     scan_data_dia = []
     scan_data_conc = []
+    scan_data_dndlndp = []
     current_diameter = []
     current_conc = []
+    current_dndlndp = []
     previous_diameter = 0
 
     # Constants for update intervals
@@ -55,6 +57,18 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
                 voltage_config["dma_inner_radius"],
                 shared_var.set_diameter,
             )
+            # Invert data
+            if shared_var.blower_runtime > 0 and shared_var.concentration != -9999:
+                dndlndp = invert_data(
+                    shared_var.concentration,
+                    calculated_dia,
+                    voltage_config["dma_eff_length"],
+                    voltage_config["aerosol_charge"],
+                    voltage_config["dma_sample_flow"],
+                    shared_var.blower_runtime * 1000,
+                )
+            else:
+                dndlndp = 0
 
             # Write line by line data to CSV file
             with open(csv_filepath, mode="a", newline="") as data_file:
@@ -88,59 +102,57 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
             if scan_data_dia:
                 if shared_var.set_diameter == previous_diameter:
                     # Averaging over current diameter
-                    current_diameter.append(calculated_dia)
-                    if shared_var.concentration == -9999:
-                        pass
-                    else:
-                        current_conc.append(shared_var.concentration)
+                    add_diameter_repeats(
+                        current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp
+                    )
                 elif abs(shared_var.set_diameter) > previous_diameter:
                     # When diameter increases, save previous diameter data
+                    current_diameter, current_conc, current_dndlndp = average_diameter_repeats(
+                        scan_data_dia,
+                        scan_data_conc,
+                        scan_data_dndlndp,
+                        current_diameter,
+                        current_conc,
+                        current_dndlndp,
+                    )
+                    add_diameter_repeats(
+                        current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp
+                    )
                     previous_diameter = shared_var.set_diameter
-
-                    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
-                    current_diameter = []
-                    current_diameter.append(calculated_dia)
-
-                    if current_conc:
-                        scan_data_conc.append(sum(current_conc) / len(current_conc))
-                    else:
-                        scan_data_conc.append(0)
-                    current_conc = []
-                    if shared_var.concentration == -9999:
-                        pass
-                    else:
-                        current_conc.append(shared_var.concentration)
 
                 else:
                     # When one scan finishes, save row to file and reset
                     print(dma)
-                    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
-                    if current_conc:
-                        scan_data_conc.append(sum(current_conc) / len(current_conc))
+                    current_diameter, current_conc, current_dndlndp = average_diameter_repeats(
+                        scan_data_dia,
+                        scan_data_conc,
+                        scan_data_dndlndp,
+                        current_diameter,
+                        current_conc,
+                        current_dndlndp,
+                    )
 
+                    # Write line to file
                     with open(csv_filepath2, mode="a", newline="") as data_file:
                         data_writer = csv.writer(data_file, delimiter=",")
-                        data_writer.writerow(scan_data_dia + scan_data_conc)
+                        data_writer.writerow(scan_data_dia + scan_data_conc + scan_data_dndlndp)
 
-                    previous_diameter = shared_var.set_diameter
-
+                    # Re-initalize
                     scan_data_dia = []
-                    scan_data_dia.append(datetime.now())
-                    current_diameter = []
-                    current_diameter.append(calculated_dia)
-
                     scan_data_conc = []
-                    current_conc = []
-                    if shared_var.concentration == -9999:
-                        pass
-                    else:
-                        current_conc.append(shared_var.concentration)
+                    scan_data_dndlndp = []
+                    scan_data_dia.append(datetime.now())
+                    add_diameter_repeats(
+                        current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp
+                    )
+                    previous_diameter = shared_var.set_diameter
 
             else:
                 # First loop
                 scan_data_dia.append(datetime.now())
-                current_diameter.append(calculated_dia)
-                current_conc.append(shared_var.concentration)
+                add_diameter_repeats(
+                    current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp
+                )
                 previous_diameter = shared_var.set_diameter
 
             b.reset()
@@ -160,6 +172,36 @@ def dataLogging(stop_threads, b, dma, voltage_config, file_e):
             print("Data Logging Error")
             print(e)
             break
+
+
+def average_diameter_repeats(
+    scan_data_dia,
+    scan_data_conc,
+    scan_data_dndlndp,
+    current_diameter,
+    current_conc,
+    current_dndlndp,
+):
+    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
+    if current_conc:
+        scan_data_conc.append(sum(current_conc) / len(current_conc))
+        scan_data_dndlndp.append(sum(current_dndlndp) / len(current_dndlndp))
+    else:
+        scan_data_conc.append(0)
+        scan_data_dndlndp.append(0)
+    current_diameter = []
+    current_conc = []
+    current_dndlndp = []
+    return current_diameter, current_conc, current_dndlndp
+
+
+def add_diameter_repeats(current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp):
+    current_diameter.append(calculated_dia)
+    if shared_var.concentration == -9999:
+        pass
+    else:
+        current_conc.append(shared_var.concentration)
+        current_dndlndp.append(dndlndp)
 
 
 def create_files(dma, file_e):
@@ -208,48 +250,21 @@ def create_files(dma, file_e):
     return start_time, csv_filepath, csv_filepath2
 
 
-def invert_data(N, d_p):
-    mean_free_path = 0.0651  # um
-    charge = 1.60e-19  # coloumbs
-    dyn_viscosity = 1.72e-05  # kg/(m*s)
-    q_a = 1500  # ccm [Aerosol Inlet Flowrate]
-    q_s = 1500  # ccm [Aerosol Outlet Flowrate]
-    q_c = 15000  # ccm [Sheath Flowrate]
-    q_m = 15000  # ccm [Excess Flowrate]
-    charge = -1
-    # dma_length = voltage_config["dma_length"]  # cm
-    # dma_outer_radius = voltage_config["dma_outer_radius"]  # cm
-    # dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
-    # dma_sheath = shared_var.blower_flow_set * 1000  # sccm
-    # if shared_var.diameter_mode == "dia_list":
-    #     diameters = np.array(shared_var.dia_list, dtype=float)
-    #     shared_var.size_bins = len(diameters)
-    #     shared_var.low_dia_lim = min(diameters)
-    #     shared_var.high_dia_lim = max(diameters)
-    # else:
-    #     diameters = np.logspace(
-    #         np.log(shared_var.low_dia_lim),
-    #         np.log(shared_var.high_dia_lim),
-    #         num=shared_var.size_bins,
-    #         base=np.exp(1),
-    #     )
-    #     print(diameters)
+def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
+    q_a = q_a_ccm  # ccm [Aerosol Inlet Flowrate]
+    q_s = q_a_ccm  # ccm [Aerosol Outlet Flowrate]
+    q_c = q_c_ccm  # ccm [Sheath Flowrate]
+    q_m = q_c_ccm  # ccm [Excess Flowrate]
     diameters = np.array([shared_var.low_dia_lim, shared_var.high_dia_lim])
-    diameters = diameters / 1000  # nm -> um
-    slip_correction = 1 + 2 * mean_free_path / diameters * (
-        1.257 + 0.4 * np.exp((-1.1 * diameters) / (2 * mean_free_path))
-    )
-    elec_mobility = (
-        (charge * slip_correction) / (3 * np.pi * dyn_viscosity * diameters * 1e-6) * 1e4
-    )
+    elec_mobility = calc_mobility_from_dia(diameters)
     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
     dlnDp = np.log(diameters[1]) - np.log(diameters[0])
     a_star = -dlnZp / dlnDp
     beta = (q_s + q_a) / (q_m + q_c)
     delta = (q_s - q_a) / (q_s + q_a)
-    charge_frac = calc_charged_frac(-1, d_p)
+    charge_frac = calc_charged_frac(aerosol_charge, d_p)
     cpc_active_eff = 1
-    dma_penetration = calc_dma_penetration(d_p, 1.58, 1500)
+    dma_penetration = calc_dma_penetration(d_p, l_eff_m, q_a)
     sample_tube_penetration = 1
     penetrate_eff = dma_penetration * sample_tube_penetration
     dNdlnDp = (N * a_star) / (

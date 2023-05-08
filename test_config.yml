@@ -19,6 +19,9 @@ voltage_set_config:
   "dma_outer_radius" : 1.92659
   "dma_inner_radius" : 0.94266
   "dma_length" : 44.348
+  "dma_eff_length": 13 # [m]
+  "dma_sample_flow" : 1800 #[sccm]
+  "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343

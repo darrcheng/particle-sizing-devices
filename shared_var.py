@@ -20,8 +20,8 @@ press_read = 0  # Measured pressure
 
 # Voltage Cycle Settings
 voltageCycle = True  # Turn voltage cycling on and off
-low_dia_lim = 0  # Lower Voltage Limit #V will be 100
-high_dia_lim = 0  # Upper Voltage Limit #V will be 8000'
+low_dia_lim = 1  # Lower Voltage Limit #V will be 100
+high_dia_lim = 2  # Upper Voltage Limit #V will be 8000'
 size_bins = 0  # Number of steps in voltage cycle
 voltage_update_time = 0  # Time between each voltage step
 ljvoltage_set_out = 0  # Labjack output to control HV supply
