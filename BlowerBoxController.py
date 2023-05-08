@@ -19,7 +19,7 @@ import cpccounting
 
 def my_excepthook(type):  # , value, traceback):
     # Write variables to file
-    with open("error.txt", "w") as f:
+    with open(time.strftime("%Y%m%d_%H%M%S") + "_error.txt", "w") as f:
         f.write("Globals:\n")
         for name in globals():
             if not name.startswith("__"):
