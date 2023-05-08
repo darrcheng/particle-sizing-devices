@@ -70,13 +70,9 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_
                 ) and not stop_threads.is_set():
                     # print("yes")
                     # print(time.monotonic() - pulse_counter)
-                    try:
-                        pulse_width_single = ljm.eReadName(
-                            handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
-                        )
-                    except ljm.LJMError:
-                        ljme = sys.exc_info()[1]
-                        print(ljme)
+                    pulse_width_single = ljm.eReadName(
+                        handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
+                    )
                     # pulse_width_single = ljm.eReadAddresses(handle, 1, [3600], [3])[0]
                     if pulse_width_single < 1:
                         pulse_width_list.append(pulse_width_single)
@@ -136,16 +132,20 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_
             next_time = curr_time + update_time - time.monotonic()
             # print(next_time)
             if next_time < 0:
+                if abs(next_time) / update_time > 1:
+                    curr_time = curr_time + update_time * int(abs(next_time) / update_time)
                 next_time = 0
                 print("Slow: CPC Pulse Counting")
             time.sleep(next_time)
             # print("after sleep")
 
-        except BaseException as e:
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            time.sleep(1)
+
+        except Exception as e:
             print("CPC Pulse Counting Error", e)
             raise
     print("Shutdown: CPC Pulse Counting")
     close_barrier.wait()
-    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
-    # ljm.eWriteName(handle, labjack_io["counter"] + "_EF_ENABLE", 0)  # Disable high-speed counter
-    # ljm.eStreamStop(handle)

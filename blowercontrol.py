@@ -1,5 +1,6 @@
 from labjack import ljm
 import time
+import sys
 
 import sensors
 import shared_var as shared_var
@@ -65,6 +66,11 @@ def blower(
             if next_time < 0:
                 next_time = 0
             time.sleep(next_time)
+
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            time.sleep(1)
 
         except BaseException as e:
             print("Sheath Flow Sensor Error", e)

@@ -4,6 +4,8 @@ from datetime import datetime  # Pulls current time from system
 import numpy as np
 import shared_var as shared_var
 import sensors
+import sys
+import threading
 
 
 # Controls the DMA voltage scanning
@@ -100,10 +102,19 @@ def hv(
                     labjack_io["voltage_set_output"],
                     ljvoltage / voltage_config["voltage_set_factor"],
                 )
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            time.sleep(1)
+
+        except threading.BrokenBarrierError:
+            time.sleep(0.5)
 
         except BaseException as e:
-            print("Voltage Scan Error")
-            print(e)
+            print(sys.exc_info()[1])
+            print(sys.exc_info()[0])
+            print("Voltage Scan Error", e)
+            close_barrier.wait()
             break
     print("Shutdown: Voltage Set")
     close_barrier.wait()
@@ -170,9 +181,16 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
             curr_time = curr_time + update_time
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
+                if abs(next_time) / update_time > 1:
+                    curr_time = curr_time + update_time * int(abs(next_time) / update_time)
                 next_time = 0
                 print("Slow: Voltage Monitor" + str(datetime.now()))
             time.sleep(next_time)
+
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            time.sleep(1)
 
         except BaseException as e:
             print("Voltage Monitor Error")
