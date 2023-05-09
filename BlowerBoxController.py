@@ -342,6 +342,9 @@ start_b.grid(row=10, column=0, columnspan=3)
 
 ############# Graph
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from matplotlib import colors
+from matplotlib import dates
 
 # Create a figure and axis for the contourf plot
 fig = Figure(figsize=(5, 4), dpi=100)
@@ -350,25 +353,66 @@ ax = fig.add_subplot()
 canvas = FigureCanvasTkAgg(fig, master=runtime)
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+time_data = np.array([])
+dp = np.array([])
+dndlndp = np.array([])
+
+vm = 10
+VM = 300
+cmap = "jet"
+norm = colors.LogNorm(vmin=vm, vmax=VM)
+
 
 # Create a function to update the contourf plot
 def update_contourf():
+    if set.graph_line:
+        try:
+            global time_data
+            print(time_data)
+            if time_data[-1] != np.datetime64(set.graph_line[0][0]):
+                time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
+                # dp = np.vstack(dp, set.graph_line[0][1:])
+                global dp
+                dp = np.vstack((dp, [1, 2, 3]))
+                global dndlndp
+                # dndlndp = np.vstack((dndlndp, set.graph_line[2]))
+                dndlndp = np.vstack((dndlndp, np.random.rand(3)))
+                y = np.arange(0, set.size_bins)
+                time1, y = np.meshgrid(time_data, y)
+                if time_data.shape > (1,):
+                    ax.clear()
+                    ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
+                    ax.set_yscale("log")
+                    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+                    ax.set_ylabel(r"Diameter [m]", fontsize=10)
+
+        except IndexError:
+            # print(e)
+            print(sys.exc_info()[0])
+            dt_array = np.empty(0, dtype="datetime64")
+            time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
+            # dp = np.asarray(set.graph_line[0][1:])
+            dp = np.asarray([1, 2, 3])
+            # dndlndp = np.asarray(set.graph_line[2])
+            dndlndp = np.asarray(np.random.rand(3))
+        print(time_data, dp, dndlndp)
     # Generate new random data for the contourf plot
+
     x = np.linspace(-3, 3, 100)
     y = np.linspace(-3, 3, 100)
     X, Y = np.meshgrid(x, y)
     Z = np.sin(np.sqrt(X**2 + Y**2)) * np.random.rand(100, 100)
 
-    # Clear the axis and plot the new data
-    ax.clear()
-    ax.contourf(X, Y, Z, cmap="coolwarm")
-    ax.set_title("Contourf Plot")
+    # # Clear the axis and plot the new data
+    # ax.clear()
+    # ax.contourf(X, Y, Z, cmap="coolwarm")
+    # ax.set_title("Contourf Plot")
 
     # Redraw the canvas
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    runtime.after(10000, update_contourf)
+    runtime.after(1000, update_contourf)
 
 
 # Call the update_contourf function to start the updating process

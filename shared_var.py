@@ -45,6 +45,9 @@ voltage_monitor_runtime = 0
 data_logging_runtime = 0
 cpc_counting_runtime = 0
 
+# GUI
+graph_line = []
+
 # # # Labjack Inputs
 # flow_read_input = "AIN0"
 # voltage_monitor_input = "AIN1"

@@ -132,7 +132,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
                     with open(csv_filepath2, mode="a", newline="") as data_file:
                         data_writer = csv.writer(data_file, delimiter=",")
                         data_writer.writerow(scan_data_dia + scan_data_conc + scan_data_dndlndp)
-
+                    shared_var.graph_line = [scan_data_dia, scan_data_conc, scan_data_dndlndp]
                     # Re-initalize
                     scan_data_dia = []
                     scan_data_conc = []
