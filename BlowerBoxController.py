@@ -383,13 +383,18 @@ def update_contourf():
                 if strictly_increasing(set.graph_line[0][1:]):
                     # check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
-                    # dp = np.vstack(dp, set.graph_line[0][1:])
                     global dp
-                    dp = np.vstack((dp, [1, 2, 3]))
+                    dp = np.vstack(dp, set.graph_line[0][1:])
+                    # dp = np.vstack((dp, [1, 2, 3]))
                     global dndlndp
-                    # dndlndp = np.vstack((dndlndp, set.graph_line[2]))
-                    dndlndp = np.vstack((dndlndp, np.random.rand(3)))
+                    dndlndp = np.vstack((dndlndp, set.graph_line[2]))
+                    # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
                     y = np.arange(0, set.size_bins)
+                    # Scroll the graph
+                    if time_data.shape > (240,):
+                        time_data = np.delete(time_data, 0)
+                        dp = np.delete(dp, 0, 0)
+                        dndlndp = np.delete(dndlndp, 0, 0)
                     time1, y = np.meshgrid(time_data, y)
                     if time_data.shape > (1,):
                         ax.clear()
@@ -403,17 +408,17 @@ def update_contourf():
             print(sys.exc_info()[0])
             dt_array = np.empty(0, dtype="datetime64")
             time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
-            # dp = np.asarray(set.graph_line[0][1:])
-            dp = np.asarray([1, 2, 3])
-            # dndlndp = np.asarray(set.graph_line[2])
-            dndlndp = np.asarray(np.random.rand(3))
-        print(time_data, dp, dndlndp)
+            dp = np.asarray(set.graph_line[0][1:])
+            # dp = np.asarray([1, 2, 3])
+            dndlndp = np.asarray(set.graph_line[2])
+            # dndlndp = np.asarray(np.random.rand(3))
+        # print(time_data, dp, dndlndp)
 
     # Redraw the canvas
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    root.after(1000, update_contourf)
+    root.after(60000, update_contourf)
 
 
 # Call the update_contourf function to start the updating process
