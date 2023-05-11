@@ -117,23 +117,27 @@ def onStart():
     global start_time
     start_time = datetime.now()
 
-    # Reveal the Monitoring controls
-    voltageSetPoint_label.pack()
-    voltageSetPoint_e.pack()
-    supplyVoltage_label.pack()
-    supplyVoltage_e.pack()
-    dia_label.pack()
-    dia_e.pack()
-    count_label.pack()
-    count_e.pack()
-    temp_label.pack()
-    temp_e.pack()
-    rh_label.pack()
-    rh_e.pack()
-    p_label.pack()
-    p_e.pack()
-    flow_label.pack()
-    flow_e.pack()
+    # Start GUI update and graphing
+    update_contourf()
+    update_gui()
+
+    # # Reveal the Monitoring controls
+    # voltageSetPoint_label.pack()
+    # voltageSetPoint_e.pack()
+    # supplyVoltage_label.pack()
+    # supplyVoltage_e.pack()
+    # dia_label.pack()
+    # dia_e.pack()
+    # conc_label.pack()
+    # conc_e.pack()
+    # temp_label.pack()
+    # temp_e.pack()
+    # rh_label.pack()
+    # rh_e.pack()
+    # p_label.pack()
+    # p_e.pack()
+    # flow_label.pack()
+    # flow_e.pack()
 
     # Define and start threads
     global blower_thread
@@ -205,7 +209,7 @@ def onStart():
             stop_threads,
             close_barrier,
             config["cpc_config"],
-            count_e,
+            conc_e,
         ),
     )
     blower_thread.start()
@@ -231,14 +235,13 @@ def onClose():
     ljm.close(handle)
 
     # time.sleep(1)
-    runtime.destroy()
+    root.destroy()
 
 
 # Program to update gui
 def update_gui():
-    count_e.delete(0, "end")
-    # print("here?")
-    count_e.insert(0, set.concentration)
+    conc_e.delete(0, "end")
+    conc_e.insert(0, set.concentration)
     rh_e.delete(0, "end")
     rh_e.insert(0, "%.2f" % set.rh_read)
     flow_e.delete(0, "end")
@@ -253,16 +256,20 @@ def update_gui():
     voltageSetPoint_e.insert(0, "%.2f" % set.ljvoltage_set_out)
     supplyVoltage_e.delete(0, "end")
     supplyVoltage_e.insert(0, "%.2f" % set.voltage_monitor)
+    count_e.delete(0, "end")
+    count_e.insert(0, "%.2f" % set.curr_count)
+    dead_e.delete(0, "end")
+    dead_e.insert(0, "%.2f" % set.pulse_width)
 
-    runtime.update()
-    runtime.after(1000, update_gui)
+    root.update()
+    root.after(1000, update_gui)
 
 
 ####################GUI Creation####################
 # Creates the base canvas for TKinter
-runtime = tk.Tk()
-gui_settings = tk.Frame(runtime)
-gui_settings.pack()
+root = tk.Tk()
+gui_settings = tk.Frame(root)
+gui_settings.grid(row=0, column=0)
 
 ####################Tkinter Widgdets####################
 # Create the TKinter widgets that allow for manual DMA Blower settings
@@ -347,11 +354,15 @@ from matplotlib import colors
 from matplotlib import dates
 
 # Create a figure and axis for the contourf plot
+graph_frame = tk.Frame(root)
+graph_frame.grid(row=0, column=2)
 fig = Figure(figsize=(5, 4), dpi=100)
 ax = fig.add_subplot()
 # fig, ax = plt.subplots()
-canvas = FigureCanvasTkAgg(fig, master=runtime)
-canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+# canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, side=tk.RIGHT)
+canvas.get_tk_widget().pack()
+# canvas.grid(column=2)
 
 time_data = np.array([])
 dp = np.array([])
@@ -368,23 +379,24 @@ def update_contourf():
     if set.graph_line:
         try:
             global time_data
-            print(time_data)
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
-                time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
-                # dp = np.vstack(dp, set.graph_line[0][1:])
-                global dp
-                dp = np.vstack((dp, [1, 2, 3]))
-                global dndlndp
-                # dndlndp = np.vstack((dndlndp, set.graph_line[2]))
-                dndlndp = np.vstack((dndlndp, np.random.rand(3)))
-                y = np.arange(0, set.size_bins)
-                time1, y = np.meshgrid(time_data, y)
-                if time_data.shape > (1,):
-                    ax.clear()
-                    ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
-                    ax.set_yscale("log")
-                    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-                    ax.set_ylabel(r"Diameter [m]", fontsize=10)
+                if strictly_increasing(set.graph_line[0][1:]):
+                    # check if diameters are strictly increasing
+                    time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
+                    # dp = np.vstack(dp, set.graph_line[0][1:])
+                    global dp
+                    dp = np.vstack((dp, [1, 2, 3]))
+                    global dndlndp
+                    # dndlndp = np.vstack((dndlndp, set.graph_line[2]))
+                    dndlndp = np.vstack((dndlndp, np.random.rand(3)))
+                    y = np.arange(0, set.size_bins)
+                    time1, y = np.meshgrid(time_data, y)
+                    if time_data.shape > (1,):
+                        ax.clear()
+                        ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
+                        ax.set_yscale("log")
+                        ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+                        ax.set_ylabel(r"Diameter [m]", fontsize=10)
 
         except IndexError:
             # print(e)
@@ -396,70 +408,101 @@ def update_contourf():
             # dndlndp = np.asarray(set.graph_line[2])
             dndlndp = np.asarray(np.random.rand(3))
         print(time_data, dp, dndlndp)
-    # Generate new random data for the contourf plot
-
-    x = np.linspace(-3, 3, 100)
-    y = np.linspace(-3, 3, 100)
-    X, Y = np.meshgrid(x, y)
-    Z = np.sin(np.sqrt(X**2 + Y**2)) * np.random.rand(100, 100)
-
-    # # Clear the axis and plot the new data
-    # ax.clear()
-    # ax.contourf(X, Y, Z, cmap="coolwarm")
-    # ax.set_title("Contourf Plot")
 
     # Redraw the canvas
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    runtime.after(1000, update_contourf)
+    root.after(1000, update_contourf)
 
 
 # Call the update_contourf function to start the updating process
-update_contourf()
+# update_contourf()
 
 # Run the tkinter main loop
 # root.mainloop()
 
 
+def strictly_increasing(L):
+    return all(x < y for x, y in zip(L, L[1:]))
+
+
 ####################Initally Hidden Tkinter Widgets####################
+monitor = tk.Frame(root)
+monitor.grid(row=0, column=1)
+dma_monitor = tk.Frame(monitor)
+dma_monitor.grid(row=0)
+flow_monitor = tk.Frame(monitor)
+flow_monitor.grid(row=1)
+conc_monitor = tk.Frame(monitor)
+conc_monitor.grid(row=2)
+
+tk.Label(dma_monitor, text="DMA Size Selection", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
 
 # Current Set Voltage
-voltageSetPoint_label = tk.Label(runtime, text="Set Voltage")
-voltageSetPoint_e = tk.Entry(runtime)
+voltageSetPoint_label = tk.Label(dma_monitor, text="Set Voltage").grid(row=1, column=0)
+voltageSetPoint_e = tk.Entry(dma_monitor)
+voltageSetPoint_e.grid(row=1, column=1)
 
 # Current Monitor Voltage
-supplyVoltage_label = tk.Label(runtime, text="Supply Voltage")
-supplyVoltage_e = tk.Entry(runtime)
-
-# Define current temperature label
-temp_label = tk.Label(runtime, text="Temperature (C)")
-temp_e = tk.Entry(runtime)
-
-# Define current RH label
-rh_label = tk.Label(runtime, text="Relative Humidity")
-rh_e = tk.Entry(runtime)
-
-# Define current pressure label
-p_label = tk.Label(runtime, text="Pressure")
-p_e = tk.Entry(runtime)
-
-# Define flow rate label
-flow_label = tk.Label(runtime, text="Flow sLPM")
-flow_e = tk.Entry(runtime)
+supplyVoltage_label = tk.Label(dma_monitor, text="Supply Voltage").grid(row=2, column=0)
+supplyVoltage_e = tk.Entry(dma_monitor)
+supplyVoltage_e.grid(row=2, column=1)
 
 # Define diameter label
-dia_label = tk.Label(runtime, text="Diameter (nm)")
-dia_e = tk.Entry(runtime)
+dia_label = tk.Label(dma_monitor, text="Diameter (nm)").grid(row=3, column=0)
+dia_e = tk.Entry(dma_monitor)
+dia_e.grid(row=3, column=1)
+
+tk.Label(flow_monitor, text="DMA Flow Parameters", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
+
+# Define flow rate label
+flow_label = tk.Label(flow_monitor, text="Flow sLPM").grid(row=1, column=0)
+flow_e = tk.Entry(flow_monitor)
+flow_e.grid(row=1, column=1)
+
+# Define current temperature label
+temp_label = tk.Label(flow_monitor, text="Temperature (C)").grid(row=2, column=0)
+temp_e = tk.Entry(flow_monitor)
+temp_e.grid(row=2, column=1)
+
+# Define current RH label
+rh_label = tk.Label(flow_monitor, text="Relative Humidity").grid(row=3, column=0)
+rh_e = tk.Entry(flow_monitor)
+rh_e.grid(row=3, column=1)
+
+# Define current pressure label
+p_label = tk.Label(flow_monitor, text="Pressure").grid(row=4, column=0)
+p_e = tk.Entry(flow_monitor)
+p_e.grid(row=4, column=1)
+
+tk.Label(conc_monitor, text="CPC Pulse Counting", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
 
 # Define cpc count label
-count_label = tk.Label(runtime, text="Counts #/cc")
-count_e = tk.Entry(runtime)
+conc_label = tk.Label(conc_monitor, text="Concentration #/cc").grid(row=1, column=0)
+conc_e = tk.Entry(conc_monitor)
+conc_e.grid(row=1, column=1)
 
-runtime.after(1000, update_gui)
+# Define cpc count label
+count_label = tk.Label(conc_monitor, text="Counts #").grid(row=2, column=0)
+count_e = tk.Entry(conc_monitor)
+count_e.grid(row=2, column=1)
+
+# Define cpc count label
+dead_label = tk.Label(conc_monitor, text="Deadtime (s)").grid(row=3, column=0)
+dead_e = tk.Entry(conc_monitor)
+dead_e.grid(row=3, column=1)
+
+# root.after(1000, update_gui)
 
 #############################################################
 # Populate the root window with navigation buttons
-runtime.protocol("WM_DELETE_WINDOW", onClose)
-runtime.mainloop()
+root.protocol("WM_DELETE_WINDOW", onClose)
+root.mainloop()
 """"""
