@@ -380,16 +380,16 @@ def update_contourf():
         try:
             global time_data
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
-                if strictly_increasing(set.graph_line[0][1:]):
+                if strictly_increasing(set.graph_line[0][2:]):
                     # check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
                     global dp
-                    dp = np.vstack((dp, set.graph_line[0][1:]))
+                    dp = np.vstack((dp, set.graph_line[0][2:]))
                     # dp = np.vstack((dp, [1, 2, 3]))
                     global dndlndp
-                    dndlndp = np.vstack((dndlndp, set.graph_line[2]))
+                    dndlndp = np.vstack((dndlndp, set.graph_line[2][1:]))
                     # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
-                    y = np.arange(0, set.size_bins)
+                    y = np.arange(0, set.size_bins - 1)
                     # Scroll the graph
                     if time_data.shape > (240,):
                         time_data = np.delete(time_data, 0)
@@ -406,9 +406,9 @@ def update_contourf():
         except IndexError:
             dt_array = np.empty(0, dtype="datetime64")
             time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
-            dp = np.asarray(set.graph_line[0][1:])
+            dp = np.asarray(set.graph_line[0][2:])
             # dp = np.asarray([1, 2, 3])
-            dndlndp = np.asarray(set.graph_line[2])
+            dndlndp = np.asarray(set.graph_line[2][1:])
             # dndlndp = np.asarray(np.random.rand(3))
         # print(time_data, dp, dndlndp)
 
