@@ -384,7 +384,7 @@ def update_contourf():
                     # check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
                     global dp
-                    dp = np.vstack(dp, set.graph_line[0][1:])
+                    dp = np.vstack((dp, set.graph_line[0][1:]))
                     # dp = np.vstack((dp, [1, 2, 3]))
                     global dndlndp
                     dndlndp = np.vstack((dndlndp, set.graph_line[2]))
@@ -404,8 +404,6 @@ def update_contourf():
                         ax.set_ylabel(r"Diameter [m]", fontsize=10)
 
         except IndexError:
-            # print(e)
-            print(sys.exc_info()[0])
             dt_array = np.empty(0, dtype="datetime64")
             time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
             dp = np.asarray(set.graph_line[0][1:])
@@ -413,6 +411,9 @@ def update_contourf():
             dndlndp = np.asarray(set.graph_line[2])
             # dndlndp = np.asarray(np.random.rand(3))
         # print(time_data, dp, dndlndp)
+
+        except Exception:
+            print(sys.exc_info()[0])
 
     # Redraw the canvas
     canvas.draw()

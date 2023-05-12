@@ -2,10 +2,133 @@ import labjack.ljm as ljm
 import time
 import shared_var
 import sys
+from datetime import datetime
 
 
 def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
-    # Configure clock
+    # Start counting
+    prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+    count_error = False
+    # # Initalize streaming for pulse width
+    # ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
+    # aScanListNames = ["DIO0_EF_READ_A"]  # Scan list names to stream
+    # numAddresses = len(aScanListNames)
+    # aScanList = ljm.namesToAddresses(numAddresses, aScanListNames)[0]
+    # ljm.eStreamStart(handle, 1000, numAddresses, aScanList, 2000)
+
+    # Constants for update intervals
+    curr_time = time.monotonic()
+    update_time = 1  # seconds
+    while not stop_threads.is_set():
+        try:
+            if count_error:
+                # Start counting
+                prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+                count_error = False
+
+            # # Read in stream pulse width data
+            # data = ljm.eStreamRead(handle)
+
+            # Clear variables used measuring pulse width
+            pulse_width_list = []
+            pulses = 0
+            pulse_error = 0
+            pulse_counter = time.monotonic()
+            shared_var.pulse_width_error = 0
+            shared_var.pulse_width = 0
+
+            # If counts are too high, don't pulse count
+            if shared_var.curr_count < 1e6:
+                # Repeatedly measure the pulse width and keep an error counter
+                while (time.monotonic() - pulse_counter) < (
+                    update_time * 0.8
+                ) and not stop_threads.is_set():
+                    pulse_width_single = ljm.eReadName(
+                        handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
+                    )
+                    if pulse_width_single < 1:
+                        pulse_width_list.append(pulse_width_single)
+                    else:
+                        pulse_error = pulse_error + 1
+                    pulses = pulses + 1
+                if pulse_width_list:
+                    raw_pulse_width = sum(pulse_width_list)
+                else:
+                    raw_pulse_width = 0
+            else:
+                shared_var.concentration = -9999
+                shared_var.pulse_width = -9999
+
+            # Read the current count from the high-speed counter
+            count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
+            shared_var.curr_count = count - prev_count
+
+            # Calculate the elapsed time since the last count
+            count_time = time.monotonic()
+            elapsed_time = count_time - prev_time
+
+            # Calculate the true pulse width from counts and measured pulse width
+            if (pulses - pulse_error) > 0:
+                shared_var.pulse_width = raw_pulse_width * (
+                    (count - prev_count) / (pulses - pulse_error)
+                )
+                # Calculate error assuming pulse errors are due to short pulses
+                if shared_var.pulse_width > 0:
+                    shared_var.pulse_width_error = (
+                        pulse_error * 50e-9 / shared_var.pulse_width * 100
+                    )
+            else:
+                shared_var.pulse_width = 0
+
+            # Calculate the concentration
+            if elapsed_time - shared_var.pulse_width > 0:
+                shared_var.concentration = (count - prev_count) / (
+                    (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
+                )
+            else:
+                shared_var.concentration = -9999
+
+            # Calculate the no deadtime concentration
+            if elapsed_time > 0:
+                shared_var.concentration_nodead = (count - prev_count) / (
+                    (elapsed_time) * cpc_config["cpc_flowrate"]
+                )
+            else:
+                shared_var.concentration_nodead = -9999
+
+            # Set the previous count and time for the next iteration
+            prev_time = count_time
+            prev_count = count
+
+            shared_var.cpc_counting_runtime = time.monotonic() - curr_time - update_time
+
+            # Schedule the next update
+            curr_time = curr_time + update_time
+            next_time = curr_time + update_time - time.monotonic()
+            # print(next_time)
+            if next_time < 0:
+                if abs(next_time) / update_time > 1:
+                    curr_time = curr_time + update_time * int(abs(next_time) / update_time)
+                next_time = 0
+                print("Slow: CPC Pulse Counting" + str(datetime.now()))
+            time.sleep(next_time)
+            # print("after sleep")
+
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            count_error = True
+            time.sleep(1)
+
+        except Exception as e:
+            print("CPC Pulse Counting Error", e)
+            raise
+    print("Shutdown: CPC Pulse Counting")
+    close_barrier.wait()
+
+
+def initalize_labjack_counting(handle, labjack_io):
+    # Enable clock
     ljm.eWriteName(handle, "DIO_EF_CLOCK1_ENABLE", 0)  # Disable clock 1
     ljm.eWriteName(handle, "DIO_EF_CLOCK2_ENABLE", 0)  # Disable clock 2
     ljm.eWriteName(handle, "DIO_EF_CLOCK0_ENABLE", 0)  # Disable clock 0
@@ -28,124 +151,4 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_
     # Initialize time variables and previous count
     prev_time = time.monotonic()
     prev_count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
-
-    # # Initalize streaming for pulse width
-    # ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
-    # aScanListNames = ["DIO0_EF_READ_A"]  # Scan list names to stream
-    # numAddresses = len(aScanListNames)
-    # aScanList = ljm.namesToAddresses(numAddresses, aScanListNames)[0]
-    # ljm.eStreamStart(handle, 1000, numAddresses, aScanList, 2000)
-
-    # Constants for update intervals
-    curr_time = time.monotonic()
-    update_time = 1  # seconds
-    while not stop_threads.is_set():
-        try:
-            # Read the current count from the high-speed counter
-            # print("right after try")
-            count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
-            shared_var.curr_count = count - prev_count
-
-            # Calculate the elapsed time since the last count
-            count_time = time.monotonic()
-            elapsed_time = count_time - prev_time
-
-            # # Read in stream pulse width data
-            # data = ljm.eStreamRead(handle)
-
-            # Clear variables used measuring pulse width
-            pulse_width_list = []
-            pulses = 0
-            pulse_error = 0
-            pulse_counter = time.monotonic()
-            shared_var.pulse_width_error = 0
-            shared_var.pulse_width = 0
-
-            # If counts are too high, don't pulse count
-            if shared_var.curr_count < 1e6:
-                # Repeatedly measure the pulse width and keep an error counter
-                # print("before while loop")
-                while (time.monotonic() - pulse_counter) < (
-                    update_time * 0.8
-                ) and not stop_threads.is_set():
-                    # print("yes")
-                    # print(time.monotonic() - pulse_counter)
-                    pulse_width_single = ljm.eReadName(
-                        handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
-                    )
-                    # pulse_width_single = ljm.eReadAddresses(handle, 1, [3600], [3])[0]
-                    if pulse_width_single < 1:
-                        pulse_width_list.append(pulse_width_single)
-                    else:
-                        pulse_error = pulse_error + 1
-                    pulses = pulses + 1
-                    # time.sleep(0.001)
-                    # print(pulse_width_single)
-                if pulse_width_list:
-                    raw_pulse_width = sum(pulse_width_list)
-                else:
-                    raw_pulse_width = 0
-
-                # raw_pulse_width = 0.5
-                # print("while loop breaks")
-
-                # Calculate the true pulse width from counts and measured pulse width
-                # print(pulses-pulse_error)
-                if raw_pulse_width > 0 and (pulses - pulse_error) > 0:
-                    shared_var.pulse_width = raw_pulse_width * (
-                        (count - prev_count) / (pulses - pulse_error)
-                    )
-                    # Calculate error assuming pulse errors are due to short pulses
-                    if shared_var.pulse_width > 0:
-                        shared_var.pulse_width_error = (
-                            pulse_error * 50e-9 / shared_var.pulse_width * 100
-                        )
-                else:
-                    shared_var.pulse_width = 0
-
-                # Calculate the count rate in pulses per second
-                if elapsed_time - shared_var.pulse_width > 0:
-                    shared_var.concentration = (count - prev_count) / (
-                        (elapsed_time - shared_var.pulse_width) * cpc_config["cpc_flowrate"]
-                    )
-                else:
-                    shared_var.concentration = -9999
-            else:
-                shared_var.concentration = -9999
-                shared_var.pulse_width = -9999
-
-            # print("do I get here?")
-
-            # Display the count rate in the label widget
-            # count_e.delete(0, "end")
-            # print("here?")
-            # count_e.insert(0, shared_var.concentration)
-            # print("i guess not here")
-            # Set the previous count and time for the next iteration
-            prev_time = count_time
-            prev_count = count
-
-            shared_var.cpc_counting_runtime = time.monotonic() - curr_time - update_time
-
-            # Schedule the next update
-            curr_time = curr_time + update_time
-            next_time = curr_time + update_time - time.monotonic()
-            # print(next_time)
-            if next_time < 0:
-                if abs(next_time) / update_time > 1:
-                    curr_time = curr_time + update_time * int(abs(next_time) / update_time)
-                next_time = 0
-                print("Slow: CPC Pulse Counting")
-            time.sleep(next_time)
-            # print("after sleep")
-
-        except ljm.LJMError:
-            ljme = sys.exc_info()[1]
-            print(ljme)
-            time.sleep(1)
-
-        except Exception as e:
-            print("CPC Pulse Counting Error", e)
-            raise
-    print("Shutdown: CPC Pulse Counting")
-    close_barrier.wait()
+    return prev_time, prev_count
