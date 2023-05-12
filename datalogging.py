@@ -46,8 +46,8 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
             # Calculate Diameter
             calculated_dia = calc_dia_from_voltage(
                 shared_var.voltage_monitor,
-                shared_var.blower_runtime * 1000,
-                shared_var.blower_runtime * 1000,
+                shared_var.flow_read * 1000,
+                shared_var.flow_read * 1000,
                 voltage_config["dma_length"],
                 voltage_config["dma_outer_radius"],
                 voltage_config["dma_inner_radius"],
