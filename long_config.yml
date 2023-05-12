@@ -14,8 +14,8 @@ labjack_io :
 cpc_config:
   "cpc_flowrate" : 16.6667 # 300/60 cubic centimeters per second
 voltage_set_config:
-  "voltage_set_factor" : 1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
-  "voltage_offset_calibration" : 0.004585 
+  "voltage_set_factor" : 2000 #1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
+  "voltage_offset_calibration" : 0 #0.004585 
   "dma_outer_radius" : 1.92659
   "dma_inner_radius" : 0.94266
   "dma_length" : 44.348
@@ -26,8 +26,8 @@ sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
   "flow_offset" : 0.9947
-  "voltage_factor" : 894.2144
-  "voltage_offset" : 0.011578
+  "voltage_factor" : 2000 #894.2144
+  "voltage_offset" : 0 # 0.011578
 gui_config:
   "low_dia_lim" : 10
   "high_dia_lim" : 600  
