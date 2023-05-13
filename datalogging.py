@@ -171,7 +171,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
         except BaseException as e:
             print("Data Logging Error")
             print(traceback.format_exc())
-            print(e)
+            # print(e)
             break
     print("Shutdown: Data Logging")
     close_barrier.wait()

@@ -1,6 +1,8 @@
 from labjack import ljm
 import time
 import sys
+import traceback
+from datetime import datetime
 
 import sensors
 import shared_var as shared_var
@@ -69,11 +71,12 @@ def blower(
 
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
-            print(ljme)
+            print("Sheath Flow Sensors: " + str(ljme) + str(datetime.now()))
             time.sleep(1)
 
         except BaseException as e:
-            print("Sheath Flow Sensor Error", e)
+            print("Sheath Flow Sensor Error")
+            print(traceback.format_exc())
             break
     print("Shutdown: Sheath Flow Sensors")
     close_barrier.wait()

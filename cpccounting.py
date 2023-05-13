@@ -24,10 +24,10 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
         try:
             if count_error:
                 try:
-                    handle = ljm.openS("ANY", "ANY", serial)
-                    print("Connected to LabJack device!")
+                    # handle = ljm.openS("ANY", "ANY", serial)
                     # Start counting
                     prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+                    print("Connected to LabJack device!")
                     count_error = False
                 except ljm.LJMError:
                     print("Failed to connect to LabJack device.")
@@ -131,13 +131,14 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
 
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
-            print(ljme)
-            print(traceback.format_exc())
+            print("CPC Counting: " + str(ljme) + str(datetime.now()))
             count_error = True
             time.sleep(1)
 
         except Exception as e:
-            print("CPC Pulse Counting Error", e)
+            print("CPC Pulse Counting Error")
+            print(traceback.format_exc())
+
             raise
     print("Shutdown: CPC Pulse Counting")
     close_barrier.wait()
