@@ -402,6 +402,12 @@ def update_contourf():
                         ax.set_yscale("log")
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
                         ax.set_ylabel(r"Diameter [m]", fontsize=10)
+                    else:
+                        print("only one line of data")
+                else:
+                    print("not strictly increasing")
+            else:
+                print("not a new timestep")
 
         except IndexError:
             dt_array = np.empty(0, dtype="datetime64")
@@ -414,6 +420,8 @@ def update_contourf():
 
         except Exception:
             print(sys.exc_info()[0])
+    else:
+        print("no data yet")
 
     # Redraw the canvas
     canvas.draw()
