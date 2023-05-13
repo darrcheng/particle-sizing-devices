@@ -206,6 +206,7 @@ def onStart():
         target=cpccounting.cpc_conc,
         args=(
             handle,
+            ljm.listAll(ljm.constants.dtANY, ljm.constants.ctANY)[3][0],
             config["labjack_io"],
             stop_threads,
             close_barrier,
@@ -382,14 +383,15 @@ def update_contourf():
         try:
             global time_data
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
-                if strictly_increasing(set.graph_line[0][2:]):
+                # if strictly_increasing(set.graph_line[0][2:]):
+                if True:
                     # check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
                     global dp
                     dp = np.vstack((dp, set.graph_line[0][2:]))
                     # dp = np.vstack((dp, [1, 2, 3]))
                     global dndlndp
-                    dndlndp = np.vstack((dndlndp, set.graph_line[2][1:]))
+                    dndlndp = np.vstack((dndlndp, set.graph_line[1][1:]))
                     # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
                     y = np.arange(0, set.size_bins - 1)
                     # Scroll the graph
@@ -412,14 +414,17 @@ def update_contourf():
                 print("not a new timestep")
 
         except IndexError:
-            if strictly_increasing(set.graph_line[0][2:]):
+            # if strictly_increasing(set.graph_line[0][2:]):
+            if True:
                 dt_array = np.empty(0, dtype="datetime64")
                 time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
                 dp = np.asarray(set.graph_line[0][2:])
                 # dp = np.asarray([1, 2, 3])
-                dndlndp = np.asarray(set.graph_line[2][1:])
+                dndlndp = np.asarray(set.graph_line[1][1:])
                 # dndlndp = np.asarray(np.random.rand(3))
-        # print(time_data, dp, dndlndp)
+            # print(time_data, dp, dndlndp)
+            print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
 
         except Exception:
             print(sys.exc_info()[0])

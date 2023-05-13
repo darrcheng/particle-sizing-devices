@@ -5,6 +5,7 @@ import shared_var
 import os
 import numpy as np
 import scipy.optimize
+import traceback
 
 
 def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
@@ -105,6 +106,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
                 elif abs(shared_var.set_diameter) > previous_diameter:
                     # When diameter increases, save previous diameter data
                     current_diameter, current_conc, current_dndlndp = average_diameter_repeats(
+                        previous_diameter,
                         scan_data_dia,
                         scan_data_conc,
                         scan_data_dndlndp,
@@ -121,6 +123,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
                     # When one scan finishes, save row to file and reset
                     # print(dma)
                     current_diameter, current_conc, current_dndlndp = average_diameter_repeats(
+                        previous_diameter,
                         scan_data_dia,
                         scan_data_conc,
                         scan_data_dndlndp,
@@ -167,6 +170,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
 
         except BaseException as e:
             print("Data Logging Error")
+            print(traceback.format_exc())
             print(e)
             break
     print("Shutdown: Data Logging")
@@ -174,6 +178,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
 
 
 def average_diameter_repeats(
+    previous_diameter,
     scan_data_dia,
     scan_data_conc,
     scan_data_dndlndp,
@@ -181,26 +186,34 @@ def average_diameter_repeats(
     current_conc,
     current_dndlndp,
 ):
-    scan_data_dia.append(sum(current_diameter) / len(current_diameter))
-    if current_conc:
-        scan_data_conc.append(sum(current_conc) / len(current_conc))
-        scan_data_dndlndp.append(sum(current_dndlndp) / len(current_dndlndp))
+    if current_diameter:
+        scan_data_dia.append(sum(current_diameter) / len(current_diameter))
+        if current_conc:
+            scan_data_conc.append(sum(current_conc) / len(current_conc))
+            scan_data_dndlndp.append(sum(current_dndlndp) / len(current_dndlndp))
+        else:
+            scan_data_conc.append(0)
+            scan_data_dndlndp.append(0)
+        current_diameter = []
+        current_conc = []
+        current_dndlndp = []
     else:
+        scan_data_dia.append(previous_diameter)
         scan_data_conc.append(0)
         scan_data_dndlndp.append(0)
-    current_diameter = []
-    current_conc = []
-    current_dndlndp = []
     return current_diameter, current_conc, current_dndlndp
 
 
 def add_diameter_repeats(current_diameter, current_conc, calculated_dia, current_dndlndp, dndlndp):
-    current_diameter.append(calculated_dia)
-    if shared_var.concentration == -9999:
+    if abs(calculated_dia) / shared_var.set_diameter > 10:
         pass
     else:
-        current_conc.append(shared_var.concentration)
-        current_dndlndp.append(dndlndp)
+        current_diameter.append(calculated_dia)
+        if shared_var.concentration == -9999:
+            pass
+        else:
+            current_conc.append(shared_var.concentration)
+            current_dndlndp.append(dndlndp)
 
 
 def create_files(dma, file_e):
