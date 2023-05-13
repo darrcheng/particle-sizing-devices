@@ -9,6 +9,7 @@ import yaml
 import sys
 import os
 import time
+import traceback
 
 import blowercontrol
 import shared_var as set
@@ -376,6 +377,7 @@ norm = colors.LogNorm(vmin=vm, vmax=VM)
 
 # Create a function to update the contourf plot
 def update_contourf():
+    print(set.size_bins)
     if set.graph_line:
         try:
             global time_data
@@ -410,16 +412,19 @@ def update_contourf():
                 print("not a new timestep")
 
         except IndexError:
-            dt_array = np.empty(0, dtype="datetime64")
-            time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
-            dp = np.asarray(set.graph_line[0][2:])
-            # dp = np.asarray([1, 2, 3])
-            dndlndp = np.asarray(set.graph_line[2][1:])
-            # dndlndp = np.asarray(np.random.rand(3))
+            if strictly_increasing(set.graph_line[0][2:]):
+                dt_array = np.empty(0, dtype="datetime64")
+                time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
+                dp = np.asarray(set.graph_line[0][2:])
+                # dp = np.asarray([1, 2, 3])
+                dndlndp = np.asarray(set.graph_line[2][1:])
+                # dndlndp = np.asarray(np.random.rand(3))
         # print(time_data, dp, dndlndp)
 
         except Exception:
             print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
+            print(traceback.format_exc())
     else:
         print("no data yet")
 
