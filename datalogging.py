@@ -261,6 +261,8 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     a_star = -dlnZp / dlnDp
     beta = (q_s + q_a) / (q_m + q_c)
     delta = (q_s - q_a) / (q_s + q_a)
+    if d_p < 1.00001:
+        d_p = 1.00001
     charge_frac = calc_charged_frac(aerosol_charge, d_p)
     cpc_active_eff = 1
     dma_penetration = calc_dma_penetration(d_p, l_eff_m, q_a)
