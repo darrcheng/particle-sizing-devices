@@ -6,6 +6,7 @@ import shared_var as shared_var
 import sensors
 import sys
 import threading
+import traceback
 
 
 # Controls the DMA voltage scanning
@@ -38,66 +39,60 @@ def hv(
                     print("Shutdown: Voltage Set")
                     break
 
-                # Loop through voltages between upper and lower limits
-                for ljvoltage, curr_diameter in zip(set_voltages, diameters):
-                    # Break out of loop on close
-                    for i in range(repeat_measure):
-                        if stop_threads.is_set() == True:
-                            print("Shutdown: Voltage Set")
-                            break
+                ljvoltage = set_voltages[int(repeat_count / repeat_measure) % shared_var.size_bins]
+                curr_diameter = diameters[int(repeat_count / repeat_measure) % shared_var.size_bins]
+                # # Loop through voltages between upper and lower limits
+                # for ljvoltage, curr_diameter in zip(set_voltages, diameters):
+                #     # Break out of loop on close
+                #     for i in range(repeat_measure):
+                #         if stop_threads.is_set() == True:
+                #             print("Shutdown: Voltage Set")
+                #             break
 
-                        # Stop cycle at current voltage if voltage cycle is turned off
-                        if voltage_scan.is_set() == True:
-                            break
+                #         # Stop cycle at current voltage if voltage cycle is turned off
+                #         if voltage_scan.is_set() == True:
+                #             break
 
-                        try:
-                            # Set Voltage to Labjack and update GUI
-                            ljm.eWriteName(
-                                handle,
-                                labjack_io["voltage_set_output"],
-                                ljvoltage / voltage_config["voltage_set_factor"]
-                                - voltage_config["voltage_offset_calibration"],
-                            )
-                            shared_var.ljvoltage_set_out = ljvoltage
-                            # voltageSetPoint_e.delete(0, "end")
-                            # voltageSetPoint_e.insert(0, "%.2f" % shared_var.ljvoltage_set_out)
+                # Set Voltage to Labjack and update GUI
+                ljm.eWriteName(
+                    handle,
+                    labjack_io["voltage_set_output"],
+                    ljvoltage / voltage_config["voltage_set_factor"]
+                    - voltage_config["voltage_offset_calibration"],
+                )
+                shared_var.ljvoltage_set_out = ljvoltage
+                # voltageSetPoint_e.delete(0, "end")
+                # voltageSetPoint_e.insert(0, "%.2f" % shared_var.ljvoltage_set_out)
 
-                            # Update GUI with diameter
-                            shared_var.set_diameter = curr_diameter * 1000
+                # Update GUI with diameter
+                shared_var.set_diameter = curr_diameter * 1000
+                # dia_e.delete(0, "end")
+                # dia_e.insert(0, "%.2f" % shared_var.set_diameter)
 
-                        except ljm.LJMError:
-                            ljme = sys.exc_info()[1]
-                            print(ljme)
-                            print(str(datetime.now()))
-                            time.sleep(1)
+                # delay_time_start = time.monotonic()
+                # # Delay until the voltage monitor matches the input
+                # while (shared_var.voltage_monitor < 0.95 * ljvoltage) or (
+                #     shared_var.voltage_monitor > 1.05 * ljvoltage
+                # ):
+                #     time.sleep(0.1)
+                # delay_time = time.monotonic() - delay_time_start
+                # print(delay_time)
+                delay_time = 0
 
-                        except threading.BrokenBarrierError:
-                            time.sleep(0.5)
-                        # dia_e.delete(0, "end")
-                        # dia_e.insert(0, "%.2f" % shared_var.set_diameter)
+                # print("voltage scan wait")
+                b.wait()
 
-                        # delay_time_start = time.monotonic()
-                        # # Delay until the voltage monitor matches the input
-                        # while (shared_var.voltage_monitor < 0.95 * ljvoltage) or (
-                        #     shared_var.voltage_monitor > 1.05 * ljvoltage
-                        # ):
-                        #     time.sleep(0.1)
-                        # delay_time = time.monotonic() - delay_time_start
-                        # print(delay_time)
-                        delay_time = 0
+                shared_var.voltage_runtime = time.monotonic() - curr_time - update_time
 
-                        # print("voltage scan wait")
-                        b.wait()
+                repeat_count = repeat_count + 1
 
-                        shared_var.voltage_runtime = time.monotonic() - curr_time - update_time
-
-                        # Schedule the next update
-                        curr_time = curr_time + update_time + delay_time
-                        next_time = curr_time + update_time + delay_time - time.monotonic()
-                        if next_time < 0:
-                            next_time = 0
-                            print("Slow: Voltage Set" + str(datetime.now()))
-                        time.sleep(next_time)
+                # Schedule the next update
+                curr_time = curr_time + update_time + delay_time
+                next_time = curr_time + update_time + delay_time - time.monotonic()
+                if next_time < 0:
+                    next_time = 0
+                    print("Slow: Voltage Set" + str(datetime.now()))
+                time.sleep(next_time)
 
             # If voltage cycle is turned off, set HV supply to paused voltage
             while voltage_scan.is_set() == True:
@@ -112,6 +107,15 @@ def hv(
                     labjack_io["voltage_set_output"],
                     ljvoltage / voltage_config["voltage_set_factor"],
                 )
+        except ljm.LJMError:
+            ljme = sys.exc_info()[1]
+            print(ljme)
+            print(str(datetime.now()))
+            print(traceback.format_exc())
+            time.sleep(1)
+
+        except threading.BrokenBarrierError:
+            time.sleep(0.5)
 
         except BaseException as e:
             print(sys.exc_info()[1])
