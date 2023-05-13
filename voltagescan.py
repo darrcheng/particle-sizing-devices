@@ -174,14 +174,16 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
     while not stop_threads.is_set():
         try:
             # Read in HV supply voltage and update GUI
-            shared_var.voltage_monitor = sensors.hv_update(
+            voltage_monitor = sensors.hv_update(
                 handle,
                 labjack_io["voltage_monitor_input"],
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
             )
-            if shared_var.voltage_monitor < 0:
+            if voltage_monitor < 0:
                 shared_var.voltage_monitor = 0.001
+            else:
+                shared_var.voltage_monitor = voltage_monitor
             # supplyVoltage_e.delete(0, "end")
             # supplyVoltage_e.insert(0, "%.2f" % shared_var.voltage_monitor)
 
