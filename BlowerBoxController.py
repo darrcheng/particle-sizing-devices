@@ -9,6 +9,7 @@ import yaml
 import sys
 import os
 import time
+import traceback
 
 import blowercontrol
 import shared_var as set
@@ -205,6 +206,7 @@ def onStart():
         target=cpccounting.cpc_conc,
         args=(
             handle,
+            ljm.listAll(ljm.constants.dtANY, ljm.constants.ctANY)[3][0],
             config["labjack_io"],
             stop_threads,
             close_barrier,
@@ -416,10 +418,14 @@ def update_contourf():
             # dp = np.asarray([1, 2, 3])
             dndlndp = np.asarray(set.graph_line[2][1:])
             # dndlndp = np.asarray(np.random.rand(3))
-        # print(time_data, dp, dndlndp)
+            # print(time_data, dp, dndlndp)
+            print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
 
         except Exception:
             print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
+            print(traceback.format_exc())
     else:
         print("no data yet")
 

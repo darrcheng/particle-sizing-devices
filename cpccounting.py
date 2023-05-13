@@ -3,9 +3,10 @@ import time
 import shared_var
 import sys
 from datetime import datetime
+import traceback
 
 
-def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
+def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
     # Start counting
     prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
     count_error = False
@@ -22,9 +23,23 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_
     while not stop_threads.is_set():
         try:
             if count_error:
-                # Start counting
-                prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
-                count_error = False
+                try:
+                    handle = ljm.openS("ANY", "ANY", serial)
+                    print("Connected to LabJack device!")
+                    # Start counting
+                    prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+                    count_error = False
+                except ljm.LJMError:
+                    print("Failed to connect to LabJack device.")
+            #     print("trying")
+            #     devices = ljm.listAll(ljm.constants.dtANY, ljm.constants.ctANY)
+            #     print(devices)
+            #     if devices[3][0] == serial:
+            #         # Start counting
+            #         prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+            #         count_error = False
+            #     else:
+            #         print("CPC Counting Off")
 
             # # Read in stream pulse width data
             # data = ljm.eStreamRead(handle)
@@ -117,6 +132,7 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config, count_
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
             print(ljme)
+            print(traceback.format_exc())
             count_error = True
             time.sleep(1)
 
