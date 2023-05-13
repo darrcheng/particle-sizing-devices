@@ -370,8 +370,8 @@ time_data = np.array([])
 dp = np.array([])
 dndlndp = np.array([])
 
-vm = 10
-VM = 300
+vm = gui_config["contour_min"]
+VM = gui_config["contour_max"]
 cmap = "jet"
 norm = colors.LogNorm(vmin=vm, vmax=VM)
 
@@ -402,7 +402,16 @@ def update_contourf():
                     time1, y = np.meshgrid(time_data, y)
                     if time_data.shape > (1,):
                         ax.clear()
-                        ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
+                        # ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
+                        ax.contourf(
+                            time1,
+                            dp.T,
+                            dndlndp.T,
+                            np.arange(vm, VM),
+                            cmap=cmap,
+                            norm=norm,
+                            extend="both",
+                        )
                         ax.set_yscale("log")
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
                         ax.set_ylabel(r"Diameter [m]", fontsize=10)
@@ -437,7 +446,7 @@ def update_contourf():
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    root.after(60000, update_contourf)
+    root.after(1000, update_contourf)
 
 
 # Call the update_contourf function to start the updating process

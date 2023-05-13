@@ -109,18 +109,19 @@ def hv(
                 )
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
-            print(ljme)
-            print(str(datetime.now()))
-            print(traceback.format_exc())
+            print("Voltage Scan" + str(ljme) + str(datetime.now()))
             time.sleep(1)
 
         except threading.BrokenBarrierError:
+            print("Voltage Scan Barrier Broken" + str(datetime.now()))
             time.sleep(0.5)
 
         except BaseException as e:
-            print(sys.exc_info()[1])
-            print(sys.exc_info()[0])
-            print("Voltage Scan Error", e)
+            # print(sys.exc_info()[1])
+            # print(sys.exc_info()[0])
+            print("Voltage Scan Error")
+            print(traceback.format_exc())
+
             close_barrier.wait()
             break
     print("Shutdown: Voltage Set")
@@ -190,8 +191,8 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
             curr_time = curr_time + update_time
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
-                if abs(next_time) / update_time > 1:
-                    curr_time = curr_time + update_time * int(abs(next_time) / update_time)
+                # if abs(next_time) / update_time > 1:
+                #     curr_time = curr_time + update_time * int(abs(next_time) / update_time)
                 next_time = 0
                 print("Slow: Voltage Monitor" + str(datetime.now()))
             time.sleep(next_time)
@@ -199,11 +200,13 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
             print(ljme)
+            print("Voltage Monitor: " + str(ljme) + str(datetime.now()))
             time.sleep(1)
 
         except BaseException as e:
             print("Voltage Monitor Error")
-            print(e)
+            # print(e)
+            print(traceback.format_exc())
             break
     print("Shutdown: Voltage Monitor")
     close_barrier.wait()
