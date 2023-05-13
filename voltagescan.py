@@ -50,19 +50,29 @@ def hv(
                         if voltage_scan.is_set() == True:
                             break
 
-                        # Set Voltage to Labjack and update GUI
-                        ljm.eWriteName(
-                            handle,
-                            labjack_io["voltage_set_output"],
-                            ljvoltage / voltage_config["voltage_set_factor"]
-                            - voltage_config["voltage_offset_calibration"],
-                        )
-                        shared_var.ljvoltage_set_out = ljvoltage
-                        # voltageSetPoint_e.delete(0, "end")
-                        # voltageSetPoint_e.insert(0, "%.2f" % shared_var.ljvoltage_set_out)
+                        try:
+                            # Set Voltage to Labjack and update GUI
+                            ljm.eWriteName(
+                                handle,
+                                labjack_io["voltage_set_output"],
+                                ljvoltage / voltage_config["voltage_set_factor"]
+                                - voltage_config["voltage_offset_calibration"],
+                            )
+                            shared_var.ljvoltage_set_out = ljvoltage
+                            # voltageSetPoint_e.delete(0, "end")
+                            # voltageSetPoint_e.insert(0, "%.2f" % shared_var.ljvoltage_set_out)
 
-                        # Update GUI with diameter
-                        shared_var.set_diameter = curr_diameter * 1000
+                            # Update GUI with diameter
+                            shared_var.set_diameter = curr_diameter * 1000
+
+                        except ljm.LJMError:
+                            ljme = sys.exc_info()[1]
+                            print(ljme)
+                            print(str(datetime.now()))
+                            time.sleep(1)
+
+                        except threading.BrokenBarrierError:
+                            time.sleep(0.5)
                         # dia_e.delete(0, "end")
                         # dia_e.insert(0, "%.2f" % shared_var.set_diameter)
 
@@ -102,13 +112,6 @@ def hv(
                     labjack_io["voltage_set_output"],
                     ljvoltage / voltage_config["voltage_set_factor"],
                 )
-        except ljm.LJMError:
-            ljme = sys.exc_info()[1]
-            print(ljme)
-            time.sleep(1)
-
-        except threading.BrokenBarrierError:
-            time.sleep(0.5)
 
         except BaseException as e:
             print(sys.exc_info()[1])
