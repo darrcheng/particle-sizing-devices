@@ -10,16 +10,20 @@ import sys
 import os
 import time
 import traceback
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from matplotlib import colors
+from matplotlib import dates
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+
 
 import blowercontrol
 import shared_var as set
 import datalogging
 import voltagescan
 import cpccounting
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy as np
 
 
 def my_excepthook(type):  # , value, traceback):
@@ -119,7 +123,7 @@ def onStart():
     start_time = datetime.now()
 
     # Start GUI update and graphing
-    # update_contourf()
+    update_contourf()
     update_gui()
 
     # Define and start threads
@@ -326,10 +330,6 @@ start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=o
 start_b.grid(row=10, column=0, columnspan=3)
 
 ############# Graph
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-from matplotlib import colors
-from matplotlib import dates
 
 # Create a figure and axis for the contourf plot
 graph_frame = tk.Frame(root)
@@ -391,12 +391,12 @@ def update_contourf():
                         ax.set_yscale("log")
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
                         ax.set_ylabel(r"Diameter [m]", fontsize=10)
-                    else:
-                        print("only one line of data")
-                else:
-                    print("not strictly increasing")
-            else:
-                print("not a new timestep")
+                    # else:
+                    # print("only one line of data")
+                # else:
+                # print("not strictly increasing")
+            # else:
+            # print("not a new timestep")
 
         except IndexError:
             # if strictly_increasing(set.graph_line[0][2:]):
