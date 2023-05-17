@@ -8,16 +8,10 @@ import traceback
 
 def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
     # Start counting
-    # prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
-    prev_time = time.monotonic()
-    prev_count = 0
+    prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+    # prev_time = time.monotonic()
+    # prev_count = 0
     count_error = False
-    # # Initalize streaming for pulse width
-    # ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
-    # aScanListNames = ["DIO0_EF_READ_A"]  # Scan list names to stream
-    # numAddresses = len(aScanListNames)
-    # aScanList = ljm.namesToAddresses(numAddresses, aScanListNames)[0]
-    # ljm.eStreamStart(handle, 1000, numAddresses, aScanList, 2000)
 
     # Constants for update intervals
     curr_time = time.monotonic()
@@ -26,25 +20,11 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
         try:
             if count_error:
                 try:
-                    # handle = ljm.openS("ANY", "ANY", serial)
-                    # Start counting
                     prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
                     print("Connected to LabJack device!")
                     count_error = False
                 except ljm.LJMError:
                     print("Failed to connect to LabJack device.")
-            #     print("trying")
-            #     devices = ljm.listAll(ljm.constants.dtANY, ljm.constants.ctANY)
-            #     print(devices)
-            #     if devices[3][0] == serial:
-            #         # Start counting
-            #         prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
-            #         count_error = False
-            #     else:
-            #         print("CPC Counting Off")
-
-            # # Read in stream pulse width data
-            # data = ljm.eStreamRead(handle)
 
             # Clear variables used measuring pulse width
             pulse_width_list = []
@@ -79,8 +59,7 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
 
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
-            # count = 0
-            print('y')
+            print("y")
             shared_var.curr_count = count - prev_count
 
             # Calculate the elapsed time since the last count
@@ -120,19 +99,18 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
             prev_time = count_time
             prev_count = count
 
+            # Calculate runtime
             shared_var.cpc_counting_runtime = time.monotonic() - curr_time - update_time
 
             # Schedule the next update
             curr_time = curr_time + update_time
             next_time = curr_time + update_time - time.monotonic()
-            # print(next_time)
             if next_time < 0:
                 if abs(next_time) / update_time > 1:
                     curr_time = curr_time + update_time * int(abs(next_time) / update_time)
                 next_time = 0
                 print("Slow: CPC Pulse Counting" + str(datetime.now()))
             time.sleep(next_time)
-            # print("after sleep")
 
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
@@ -143,8 +121,8 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
         except Exception as e:
             print("CPC Pulse Counting Error")
             print(traceback.format_exc())
-
             raise
+
     print("Shutdown: CPC Pulse Counting")
     close_barrier.wait()
 
@@ -163,12 +141,12 @@ def initalize_labjack_counting(handle, labjack_io):
     ljm.eWriteName(handle, labjack_io["counter"] + "_EF_INDEX", 7)  # Set input as counter
     ljm.eWriteName(handle, labjack_io["counter"] + "_EF_ENABLE", 1)  # Enable high-speed counter
 
-    # Configure pulse width in
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_CONFIG_A", 0)  # Set to one shot
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_INDEX", 5)  # Set input as pulse width
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_OPTIONS", 0)  # Set to clock 0
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 1)  # Enable pulse width
+    # # Configure pulse width in
+    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
+    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_CONFIG_A", 0)  # Set to one shot
+    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_INDEX", 5)  # Set input as pulse width
+    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_OPTIONS", 0)  # Set to clock 0
+    # ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 1)  # Enable pulse width
 
     # Initialize time variables and previous count
     prev_time = time.monotonic()

@@ -122,24 +122,6 @@ def onStart():
     # update_contourf()
     update_gui()
 
-    # # Reveal the Monitoring controls
-    # voltageSetPoint_label.pack()
-    # voltageSetPoint_e.pack()
-    # supplyVoltage_label.pack()
-    # supplyVoltage_e.pack()
-    # dia_label.pack()
-    # dia_e.pack()
-    # conc_label.pack()
-    # conc_e.pack()
-    # temp_label.pack()
-    # temp_e.pack()
-    # rh_label.pack()
-    # rh_e.pack()
-    # p_label.pack()
-    # p_e.pack()
-    # flow_label.pack()
-    # flow_e.pack()
-
     # Define and start threads
     global blower_thread
     blower_thread = threading.Thread(
@@ -230,13 +212,8 @@ def onClose():
     global stopThreads
     stopThreads = True
     stop_threads.set()
-    # time.sleep(1)
-    # stop_threads.set()
     close_barrier.wait()
-    # print(cpc_counting_thread.is_alive())
     ljm.close(handle)
-
-    # time.sleep(1)
     root.destroy()
 
 
@@ -338,7 +315,6 @@ ttk.Radiobutton(gui_settings, text="Diameter List", variable=dia_option, value="
 ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="interval").grid(
     row=2, column=2
 )
-
 
 # Voltage Cycle Button
 voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=4, column=2)
@@ -449,13 +425,6 @@ def update_contourf():
     root.after(60000, update_contourf)
 
 
-# Call the update_contourf function to start the updating process
-# update_contourf()
-
-# Run the tkinter main loop
-# root.mainloop()
-
-
 def strictly_increasing(L):
     return all(x < y for x, y in zip(L, L[1:]))
 
@@ -532,7 +501,6 @@ dead_label = tk.Label(conc_monitor, text="Deadtime (s)").grid(row=3, column=0)
 dead_e = tk.Entry(conc_monitor)
 dead_e.grid(row=3, column=1)
 
-# root.after(1000, update_gui)
 
 #############################################################
 # Populate the root window with navigation buttons
