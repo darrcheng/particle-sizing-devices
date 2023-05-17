@@ -8,7 +8,9 @@ import traceback
 
 def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
     # Start counting
-    prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+    # prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
+    prev_time = time.monotonic()
+    prev_count = 0
     count_error = False
     # # Initalize streaming for pulse width
     # ljm.writeLibraryConfigS("LJM_STREAM_RECEIVE_TIMEOUT_MS", 0)
@@ -52,30 +54,33 @@ def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config
             shared_var.pulse_width_error = 0
             shared_var.pulse_width = 0
 
-            # If counts are too high, don't pulse count
-            if shared_var.curr_count < 1e6:
-                # Repeatedly measure the pulse width and keep an error counter
-                while (time.monotonic() - pulse_counter) < (
-                    update_time * 0.8
-                ) and not stop_threads.is_set():
-                    pulse_width_single = ljm.eReadName(
-                        handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
-                    )
-                    if pulse_width_single < 1:
-                        pulse_width_list.append(pulse_width_single)
-                    else:
-                        pulse_error = pulse_error + 1
-                    pulses = pulses + 1
-                if pulse_width_list:
-                    raw_pulse_width = sum(pulse_width_list)
-                else:
-                    raw_pulse_width = 0
-            else:
-                shared_var.concentration = -9999
-                shared_var.pulse_width = -9999
+            # # If counts are too high, don't pulse count
+            # if shared_var.curr_count < 1e6:
+            #     # Repeatedly measure the pulse width and keep an error counter
+            #     while (time.monotonic() - pulse_counter) < (
+            #         update_time * 0.8
+            #     ) and not stop_threads.is_set():
+            #         pulse_width_single = ljm.eReadName(
+            #             handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
+            #         )
+            #         if pulse_width_single < 1:
+            #             pulse_width_list.append(pulse_width_single)
+            #         else:
+            #             pulse_error = pulse_error + 1
+            #         pulses = pulses + 1
+            #     if pulse_width_list:
+            #         raw_pulse_width = sum(pulse_width_list)
+            #     else:
+            #         raw_pulse_width = 0
+            # else:
+            #     shared_var.concentration = -9999
+            #     shared_var.pulse_width = -9999
+            raw_pulse_width = 0
 
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
+            # count = 0
+            print('y')
             shared_var.curr_count = count - prev_count
 
             # Calculate the elapsed time since the last count
@@ -167,5 +172,5 @@ def initalize_labjack_counting(handle, labjack_io):
 
     # Initialize time variables and previous count
     prev_time = time.monotonic()
-    prev_count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
+    prev_count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A_AND_RESET")
     return prev_time, prev_count

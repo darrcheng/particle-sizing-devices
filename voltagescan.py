@@ -180,7 +180,8 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
             )
-            if voltage_monitor < 0:
+            # voltage_monitor = 0
+            if voltage_monitor <= 0:
                 shared_var.voltage_monitor = 0.001
             else:
                 shared_var.voltage_monitor = voltage_monitor

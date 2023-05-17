@@ -66,7 +66,7 @@ gui_config = config["gui_config"]
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
 
-value = 1
+value = 10
 print("Setting LJM_USB_SEND_RECEIVE_TIMEOUT_MS to %.00f milliseconds\n" % value)
 LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
 
@@ -119,7 +119,7 @@ def onStart():
     start_time = datetime.now()
 
     # Start GUI update and graphing
-    update_contourf()
+    # update_contourf()
     update_gui()
 
     # # Reveal the Monitoring controls
@@ -446,7 +446,7 @@ def update_contourf():
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    root.after(1000, update_contourf)
+    root.after(60000, update_contourf)
 
 
 # Call the update_contourf function to start the updating process
