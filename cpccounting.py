@@ -6,7 +6,7 @@ from datetime import datetime
 import traceback
 
 
-def cpc_conc(handle, serial, labjack_io, stop_threads, close_barrier, cpc_config, count_e):
+def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config):
     # Start counting
     prev_time, prev_count = initalize_labjack_counting(handle, labjack_io)
     # prev_time = time.monotonic()

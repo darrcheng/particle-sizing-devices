@@ -8,9 +8,7 @@ import sensors
 import shared_var as shared_var
 
 
-def blower(
-    handle, labjack_io, stop_threads, close_barrier, sensor_config, pid, temp_e, rh_e, p_e, flow_e
-):
+def blower(handle, labjack_io, stop_threads, close_barrier, sensor_config, pid):
     """Reads in sheath flow sensors, updates GUI and executes the PID control"""
 
     # Set flow to 0 LPM and pause to allow blower to slow down

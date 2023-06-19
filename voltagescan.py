@@ -8,6 +8,8 @@ import sys
 import threading
 import traceback
 
+import mobilitycalc
+
 
 # Controls the DMA voltage scanning
 def hv(
@@ -18,8 +20,6 @@ def hv(
     close_barrier,
     voltage_scan,
     voltage_config,
-    voltageSetPoint_e,
-    dia_e,
 ):
     # Calculate voltages based on diameter list or ln spaced dimaeters
     diameters, set_voltages = calc_voltages(voltage_config)
@@ -39,21 +39,15 @@ def hv(
                     print("Shutdown: Voltage Set")
                     break
 
+                # Set current voltage and diameter based on loop count, does not reset on error
                 ljvoltage = set_voltages[int(repeat_count / repeat_measure) % shared_var.size_bins]
                 curr_diameter = diameters[int(repeat_count / repeat_measure) % shared_var.size_bins]
-                # # Loop through voltages between upper and lower limits
-                # for ljvoltage, curr_diameter in zip(set_voltages, diameters):
-                #     # Break out of loop on close
-                #     for i in range(repeat_measure):
-                #         if stop_threads.is_set() == True:
-                #             print("Shutdown: Voltage Set")
-                #             break
 
-                #         # Stop cycle at current voltage if voltage cycle is turned off
-                #         if voltage_scan.is_set() == True:
-                #             break
+                # Hard code in a 10 kV maximum voltage for all DMAs
+                if ljvoltage > 10000:
+                    ljvoltage = 10000
 
-                # Set Voltage to Labjack and update GUI
+                # Set Voltage to Labjack
                 ljm.eWriteName(
                     handle,
                     labjack_io["voltage_set_output"],
@@ -61,34 +55,22 @@ def hv(
                     - voltage_config["voltage_offset_calibration"],
                 )
                 shared_var.ljvoltage_set_out = ljvoltage
-                # voltageSetPoint_e.delete(0, "end")
-                # voltageSetPoint_e.insert(0, "%.2f" % shared_var.ljvoltage_set_out)
 
-                # Update GUI with diameter
+                # Update Diameter
                 shared_var.set_diameter = curr_diameter * 1000
-                # dia_e.delete(0, "end")
-                # dia_e.insert(0, "%.2f" % shared_var.set_diameter)
 
-                # delay_time_start = time.monotonic()
-                # # Delay until the voltage monitor matches the input
-                # while (shared_var.voltage_monitor < 0.95 * ljvoltage) or (
-                #     shared_var.voltage_monitor > 1.05 * ljvoltage
-                # ):
-                #     time.sleep(0.1)
-                # delay_time = time.monotonic() - delay_time_start
-                # print(delay_time)
-                delay_time = 0
-
-                # print("voltage scan wait")
+                # Wait for datalogging
                 b.wait()
 
+                # Calculate runtime
                 shared_var.voltage_runtime = time.monotonic() - curr_time - update_time
 
+                # Increment count number for voltage setting
                 repeat_count = repeat_count + 1
 
                 # Schedule the next update
-                curr_time = curr_time + update_time + delay_time
-                next_time = curr_time + update_time + delay_time - time.monotonic()
+                curr_time = curr_time + update_time
+                next_time = curr_time + update_time - time.monotonic()
                 if next_time < 0:
                     next_time = 0
                     print("Slow: Voltage Set" + str(datetime.now()))
@@ -107,6 +89,7 @@ def hv(
                     labjack_io["voltage_set_output"],
                     ljvoltage / voltage_config["voltage_set_factor"],
                 )
+
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
             print("Voltage Scan" + str(ljme) + str(datetime.now()))
@@ -117,11 +100,8 @@ def hv(
             time.sleep(0.5)
 
         except BaseException as e:
-            # print(sys.exc_info()[1])
-            # print(sys.exc_info()[0])
             print("Voltage Scan Error")
             print(traceback.format_exc())
-
             close_barrier.wait()
             break
     print("Shutdown: Voltage Set")
@@ -129,18 +109,20 @@ def hv(
 
 
 def calc_voltages(voltage_config):
-    mean_free_path = 0.0651  # um
-    charge = 1.60e-19  # coloumbs
-    dyn_viscosity = 1.72e-05  # kg/(m*s)
+    # Constants
     dma_length = voltage_config["dma_length"]  # cm
     dma_outer_radius = voltage_config["dma_outer_radius"]  # cm
     dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
     dma_sheath = shared_var.blower_flow_set * 1000  # sccm
+
+    # Calculate set voltages using list of diameters
     if shared_var.diameter_mode == "dia_list":
         diameters = np.array(shared_var.dia_list, dtype=float)
         shared_var.size_bins = len(diameters)
         shared_var.low_dia_lim = min(diameters)
         shared_var.high_dia_lim = max(diameters)
+
+    # Calculate set voltages using low/high limits
     else:
         diameters = np.logspace(
             np.log(shared_var.low_dia_lim),
@@ -148,26 +130,19 @@ def calc_voltages(voltage_config):
             num=shared_var.size_bins,
             base=np.exp(1),
         )
-        print(diameters)
-    diameters = diameters / 1000  # nm -> um
-    slip_correction = 1 + 2 * mean_free_path / diameters * (
-        1.257 + 0.4 * np.exp((-1.1 * diameters) / (2 * mean_free_path))
-    )
-    elec_mobility = (
-        (charge * slip_correction) / (3 * np.pi * dyn_viscosity * diameters * 1e-6) * 1e4
-    )
-    set_voltages = (
-        (dma_sheath / 60 * 2)
-        / (4 * np.pi * dma_length * elec_mobility)
-        * np.log(dma_outer_radius / dma_inner_radius)
-    )
 
+    # Calculate Set Voltages from Diameters
+    elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
+    set_voltages = mobilitycalc.calc_voltage_from_mobility(
+        elec_mobility, dma_sheath, dma_sheath, dma_length, dma_outer_radius, dma_inner_radius
+    )
+    print(set_voltages)
     return diameters, set_voltages
 
 
 # Define Voltage Monitor
-def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVoltage_e):
-    # Constants for flow intervals
+def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config):
+    # Constants for voltage set intervals
     curr_time = time.monotonic()
     update_time = 0.500  # seconds
 
@@ -180,14 +155,13 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
             )
-            # voltage_monitor = 0
+            # Set voltage monitor minimum
             if voltage_monitor <= 0:
                 shared_var.voltage_monitor = 0.001
             else:
                 shared_var.voltage_monitor = voltage_monitor
-            # supplyVoltage_e.delete(0, "end")
-            # supplyVoltage_e.insert(0, "%.2f" % shared_var.voltage_monitor)
 
+            # Calculate runtime
             shared_var.voltage_monitor_runtime = time.monotonic() - curr_time - update_time
 
             # Schedule the next update
@@ -208,8 +182,8 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config, supplyVo
 
         except BaseException as e:
             print("Voltage Monitor Error")
-            # print(e)
             print(traceback.format_exc())
             break
+
     print("Shutdown: Voltage Monitor")
     close_barrier.wait()

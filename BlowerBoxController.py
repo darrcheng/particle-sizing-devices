@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-
 import blowercontrol
 import shared_var as set
 import datalogging
@@ -51,8 +50,7 @@ def my_excepthook(type):  # , value, traceback):
 # Set the excepthook
 threading.excepthook = my_excepthook
 
-
-####################Startup####################
+#   ###################Startup####################
 
 # Allow config file to be passed from .bat file or directly from code
 if len(sys.argv) > 1:
@@ -69,7 +67,6 @@ gui_config = config["gui_config"]
 # Load Labjack
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
-
 value = 10
 print("Setting LJM_USB_SEND_RECEIVE_TIMEOUT_MS to %.00f milliseconds\n" % value)
 LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
@@ -123,7 +120,7 @@ def onStart():
     start_time = datetime.now()
 
     # Start GUI update and graphing
-    update_contourf()
+    update_contourf(np.array([]), np.array([]), np.array([]))
     update_gui()
 
     # Define and start threads
@@ -138,10 +135,6 @@ def onStart():
             close_barrier,
             config["sensor_config"],
             pid,
-            temp_e,
-            rh_e,
-            p_e,
-            flow_e,
         ),
     )
     global voltage_scan_thread
@@ -156,8 +149,6 @@ def onStart():
             close_barrier,
             voltage_scan,
             config["voltage_set_config"],
-            voltageSetPoint_e,
-            dia_e,
         ),
     )
     global voltage_monitor_thread
@@ -170,7 +161,6 @@ def onStart():
             stop_threads,
             close_barrier,
             config["sensor_config"],
-            supplyVoltage_e,
         ),
     )
     global data_logging_thread
@@ -192,12 +182,10 @@ def onStart():
         target=cpccounting.cpc_conc,
         args=(
             handle,
-            ljm.listAll(ljm.constants.dtANY, ljm.constants.ctANY)[3][0],
             config["labjack_io"],
             stop_threads,
             close_barrier,
             config["cpc_config"],
-            conc_e,
         ),
     )
     blower_thread.start()
@@ -336,15 +324,12 @@ graph_frame = tk.Frame(root)
 graph_frame.grid(row=0, column=2)
 fig = Figure(figsize=(5, 4), dpi=100)
 ax = fig.add_subplot()
-# fig, ax = plt.subplots()
 canvas = FigureCanvasTkAgg(fig, master=graph_frame)
-# canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, side=tk.RIGHT)
 canvas.get_tk_widget().pack()
-# canvas.grid(column=2)
 
-time_data = np.array([])
-dp = np.array([])
-dndlndp = np.array([])
+# time_data = np.array([])
+# dp = np.array([])
+# dndlndp = np.array([])
 
 vm = gui_config["contour_min"]
 VM = gui_config["contour_max"]
@@ -353,25 +338,25 @@ norm = colors.LogNorm(vmin=vm, vmax=VM)
 
 
 # Create a function to update the contourf plot
-def update_contourf():
+def update_contourf(time_data, dp, dndlndp):
     print(set.size_bins)
     if set.graph_line:
         try:
-            global time_data
+            # global time_data
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
                 # if strictly_increasing(set.graph_line[0][2:]):
                 if True:
                     # check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
-                    global dp
+                    # global dp
                     dp = np.vstack((dp, set.graph_line[0][2:]))
                     # dp = np.vstack((dp, [1, 2, 3]))
-                    global dndlndp
+                    # global dndlndp
                     dndlndp = np.vstack((dndlndp, set.graph_line[1][1:]))
                     # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
                     y = np.arange(0, set.size_bins - 1)
                     # Scroll the graph
-                    if time_data.shape > (240,):
+                    if time_data.shape > (144,):
                         time_data = np.delete(time_data, 0)
                         dp = np.delete(dp, 0, 0)
                         dndlndp = np.delete(dndlndp, 0, 0)
@@ -422,7 +407,7 @@ def update_contourf():
     canvas.draw()
 
     # Schedule the function to be called again after 10 seconds
-    root.after(60000, update_contourf)
+    root.after(60000, lambda: update_contourf(time_data, dp, dndlndp))
 
 
 def strictly_increasing(L):

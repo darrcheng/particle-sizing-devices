@@ -305,7 +305,7 @@ def calc_charged_frac(charge, d_nm):
 
 def calc_slip_correction(d_nm):
     """Seinfeld and Pandis 2016 (9.34), returns C_c"""
-    mean_free_path = 65.1  # um
+    mean_free_path = 65.1  # nm
     slip_correction = 1 + 2 * mean_free_path / d_nm * (
         1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path))
     )
