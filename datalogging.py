@@ -8,9 +8,9 @@ import scipy.optimize
 import traceback
 
 
-def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
+def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config, file_e):
     # Create the subfolder with current date and time
-    start_time, csv_filepath, csv_filepath2 = create_files(dma, file_e)
+    start_time, csv_filepath, csv_filepath2 = create_files(dma, data_config["header"], file_e)
     log_elapsed = 0
     count = 0
     start = time.monotonic()
@@ -32,7 +32,9 @@ def dataLogging(stop_threads, b, close_barrier, dma, voltage_config, file_e):
         try:
             # Create new file on new day
             if datetime.now().day != start_time.day:
-                start_time, csv_filepath, csv_filepath2 = create_files(dma, file_e)
+                start_time, csv_filepath, csv_filepath2 = create_files(
+                    dma, data_config["header"], file_e
+                )
                 log_elapsed = 0
                 count = 0
                 start = time.monotonic()
@@ -216,7 +218,7 @@ def add_diameter_repeats(current_diameter, current_conc, calculated_dia, current
             current_dndlndp.append(dndlndp)
 
 
-def create_files(dma, file_e):
+def create_files(dma, header, file_e):
     start_time = datetime.now()
     current_date = start_time.strftime("%Y-%m-%d")
     subfolder_path = os.path.join(os.getcwd(), current_date)
@@ -234,30 +236,7 @@ def create_files(dma, file_e):
     # Open CSV logging file
     with open(csv_filepath, mode="w", newline="") as data_file:
         data_writer = csv.writer(data_file, delimiter=",")
-        data_writer.writerow(
-            [
-                "Count",
-                "Timer",
-                "Elapsed Time",
-                "Set Diameter [nm]",
-                "Calculated Diameter [nm]",
-                "Set Voltage [V]",
-                "Actual Voltage [V]",
-                "Flow Rate [LPM]",
-                "Temperature [C]",
-                "RH [%]",
-                "Pressure [kPa]",
-                "Concentration [#/cc]",
-                "Concentration No Deadtime[#/cc]" "Counts [#]",
-                "Pulse Width [s]",
-                "Pulse Width Error [%]",
-                "Blower Control Runtime [s]",
-                "Voltage Update Runtime [s]",
-                "Voltage Monitor Runtime [s]",
-                "CPC Counting Runtime [s]",
-                "Datalogging Runtime[s]",
-            ]
-        )
+        data_writer.writerow(header)
 
     return start_time, csv_filepath, csv_filepath2
 

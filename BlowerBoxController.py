@@ -23,6 +23,7 @@ import shared_var as set
 import datalogging
 import voltagescan
 import cpccounting
+import cpcserial
 
 
 def my_excepthook(type):  # , value, traceback):
@@ -75,7 +76,7 @@ LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
 datalog_barrier = threading.Barrier(2)
-close_barrier = threading.Barrier(6)
+close_barrier = threading.Barrier(7)
 
 
 ####################TKinter Button Functions####################
@@ -172,6 +173,7 @@ def onStart():
             datalog_barrier,
             close_barrier,
             config["dma"],
+            config["data_config"],
             config["voltage_set_config"],
             file_e,
         ),
@@ -187,6 +189,12 @@ def onStart():
             close_barrier,
             config["cpc_config"],
         ),
+    )
+    global cpc_serial_thread
+    cpc_serial_thread = threading.Thread(
+        name="Serial Read",
+        target=cpcserial.serial_read,
+        args=(stop_threads, close_barrier, config["data_config"]),
     )
     blower_thread.start()
     voltage_scan_thread.start()
