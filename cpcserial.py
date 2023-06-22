@@ -27,8 +27,6 @@ def serial_read(stop_threads, close_barrier, data_config):
     )
     ser.flushInput()
 
-    print("serial runs")
-
     # Send commands and record responses
     # commands = ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]  # Add more commands as needed
     commands = data_config["serial_commands"]
@@ -52,7 +50,8 @@ def serial_read(stop_threads, close_barrier, data_config):
                 # print(3)
                 # Append response to the list
                 responses.extend(response)
-            print(responses)
+
+            shared_var.cpc_serial_read = responses
 
             # Calculate runtime
             shared_var.serial_runtime = time.monotonic() - curr_time - update_time

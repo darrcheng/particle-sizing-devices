@@ -10,7 +10,9 @@ import traceback
 
 def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config, file_e):
     # Create the subfolder with current date and time
-    start_time, csv_filepath, csv_filepath2 = create_files(dma, data_config["header"], file_e)
+    start_time, csv_filepath, csv_filepath2 = create_files(
+        dma, data_config["header"], data_config["cpc_header"], file_e
+    )
     log_elapsed = 0
     count = 0
     start = time.monotonic()
@@ -96,6 +98,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                         shared_var.cpc_counting_runtime,
                         shared_var.data_logging_runtime,
                     ]
+                    + shared_var.cpc_serial_read
                 )
 
             # Write aggregated data to CSV file
@@ -218,7 +221,7 @@ def add_diameter_repeats(current_diameter, current_conc, calculated_dia, current
             current_dndlndp.append(dndlndp)
 
 
-def create_files(dma, header, file_e):
+def create_files(dma, header, cpc_header, file_e):
     start_time = datetime.now()
     current_date = start_time.strftime("%Y-%m-%d")
     subfolder_path = os.path.join(os.getcwd(), current_date)
@@ -236,7 +239,7 @@ def create_files(dma, header, file_e):
     # Open CSV logging file
     with open(csv_filepath, mode="w", newline="") as data_file:
         data_writer = csv.writer(data_file, delimiter=",")
-        data_writer.writerow(header)
+        data_writer.writerow(header + cpc_header)
 
     return start_time, csv_filepath, csv_filepath2
 

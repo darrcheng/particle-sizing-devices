@@ -50,6 +50,8 @@ serial_runtime = 0
 # GUI
 graph_line = []
 
+# CPC Serial
+cpc_serial_read = []
 # # # Labjack Inputs
 # flow_read_input = "AIN0"
 # voltage_monitor_input = "AIN1"
