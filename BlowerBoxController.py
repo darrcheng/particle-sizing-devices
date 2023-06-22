@@ -201,6 +201,7 @@ def onStart():
     voltage_monitor_thread.start()
     data_logging_thread.start()
     cpc_counting_thread.start()
+    cpc_serial_thread.start()
 
 
 # Close Program

@@ -15,7 +15,7 @@ import csv
 def serial_read(stop_threads, close_barrier, data_config):
     # Constants for voltage set intervals
     curr_time = time.monotonic()
-    update_time = 0.500  # seconds
+    update_time = 1  # seconds
 
     # Set up the serial port
     ser = serial.Serial(
@@ -26,6 +26,8 @@ def serial_read(stop_threads, close_barrier, data_config):
         timeout=data_config["serial_timeout"],
     )
     ser.flushInput()
+
+    print("serial runs")
 
     # Send commands and record responses
     # commands = ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]  # Add more commands as needed
