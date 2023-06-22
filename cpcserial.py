@@ -75,39 +75,39 @@ def serial_read(stop_threads, close_barrier, data_config):
     close_barrier.wait()
 
 
-# Set up the CSV file
-filename = "data.csv"
-# 3772
-# header = ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number"]  # Customize the header as needed
-# 3025
-header = [
-    "time",
-    "concentration",
-    "condensor temp",
-    "saturator temp",
-    "optics temp",
-    "flow",
-    "ready environment",
-    "reference detector voltage",
-    "detector voltage",
-    "pump control value",
-    "1 second counts",
-    "liquid level",
-]
-with open(filename, mode="w", newline="") as csv_file:
-    writer = csv.writer(csv_file)
-    writer.writerow(header)
+# # Set up the CSV file
+# filename = "data.csv"
+# # 3772
+# # header = ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number"]  # Customize the header as needed
+# # 3025
+# header = [
+#     "time",
+#     "concentration",
+#     "condensor temp",
+#     "saturator temp",
+#     "optics temp",
+#     "flow",
+#     "ready environment",
+#     "reference detector voltage",
+#     "detector voltage",
+#     "pump control value",
+#     "1 second counts",
+#     "liquid level",
+# ]
+# with open(filename, mode="w", newline="") as csv_file:
+#     writer = csv.writer(csv_file)
+#     writer.writerow(header)
 
-while True:
-    try:
-        # Write responses to CSV file
-        with open(filename, mode="a", newline="") as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow([time.time()] + responses)
+# while True:
+#     try:
+#         # Write responses to CSV file
+#         with open(filename, mode="a", newline="") as csv_file:
+#             writer = csv.writer(csv_file)
+#             writer.writerow([time.time()] + responses)
 
-        # Wait one second before sending the commands again
-        time.sleep(1)
-    except KeyboardInterrupt:
-        break
+#         # Wait one second before sending the commands again
+#         time.sleep(1)
+#     except KeyboardInterrupt:
+#         break
 
-# Close the serial port
+# # Close the serial port
