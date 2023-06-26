@@ -49,14 +49,17 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
             b.wait()
 
             # Calculate Diameter
-            calculated_dia = calc_dia_from_voltage(
-                shared_var.voltage_monitor,
-                shared_var.flow_read * 1000,
-                shared_var.flow_read * 1000,
-                voltage_config["dma_length"],
-                voltage_config["dma_outer_radius"],
-                voltage_config["dma_inner_radius"],
-                shared_var.set_diameter,
+            calculated_dia = (
+                calc_dia_from_voltage(
+                    shared_var.voltage_monitor,
+                    shared_var.flow_read * 1000,
+                    shared_var.flow_read * 1000,
+                    voltage_config["dma_length"],
+                    voltage_config["dma_outer_radius"],
+                    voltage_config["dma_inner_radius"],
+                    shared_var.set_diameter,
+                )
+                / 1000
             )
             # Invert data
             if shared_var.blower_runtime > 0 and shared_var.concentration != -9999:

@@ -384,7 +384,7 @@ def update_contourf(time_data, dp, dndlndp):
                         )
                         ax.set_yscale("log")
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-                        ax.set_ylabel(r"Diameter [m]", fontsize=10)
+                        ax.set_ylabel(r"Diameter [nm]", fontsize=10)
                     # else:
                     # print("only one line of data")
                 # else:
