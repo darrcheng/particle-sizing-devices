@@ -35,7 +35,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
             # Create new file on new day
             if datetime.now().day != start_time.day:
                 start_time, csv_filepath, csv_filepath2 = create_files(
-                    dma, data_config["header"], file_e
+                    dma, data_config["header"], data_config["cpc_header"], file_e
                 )
                 log_elapsed = 0
                 count = 0
