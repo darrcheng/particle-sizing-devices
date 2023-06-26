@@ -57,7 +57,7 @@ def hv(
                 shared_var.ljvoltage_set_out = ljvoltage
 
                 # Update Diameter
-                shared_var.set_diameter = curr_diameter * 1000
+                shared_var.set_diameter = curr_diameter
 
                 # Wait for datalogging
                 b.wait()
