@@ -7,6 +7,8 @@ import numpy as np
 import scipy.optimize
 import traceback
 
+import mobilitycalc
+
 
 def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config, file_e):
     # Create the subfolder with current date and time
@@ -24,6 +26,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
     current_conc = []
     current_dndlndp = []
     previous_diameter = 0
+    previous_calc_diameter = 0
 
     # Constants for update intervals
     curr_time = time.monotonic()
@@ -58,6 +61,17 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                 voltage_config["dma_inner_radius"],
                 shared_var.set_diameter,
             )
+            if calculated_dia < 0 and previous_calc_diameter != 0:
+                calculated_dia = calc_dia_from_voltage(
+                    shared_var.voltage_monitor,
+                    shared_var.flow_read * 1000,
+                    shared_var.flow_read * 1000,
+                    voltage_config["dma_length"],
+                    voltage_config["dma_outer_radius"],
+                    voltage_config["dma_inner_radius"],
+                    previous_calc_diameter,
+                )
+            previous_calc_diameter = calculated_dia
             # Invert data
             if shared_var.blower_runtime > 0 and shared_var.concentration != -9999:
                 dndlndp = invert_data(
@@ -258,7 +272,7 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     delta = (q_s - q_a) / (q_s + q_a)
     if d_p < 1.00001:
         d_p = 1.00001
-    charge_frac = calc_charged_frac(aerosol_charge, d_p)
+    charge_frac = mobilitycalc.calc_charged_frac(aerosol_charge, d_p)
     cpc_active_eff = 1
     dma_penetration = calc_dma_penetration(d_p, l_eff_m, q_a)
     sample_tube_penetration = 1
@@ -269,36 +283,36 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     return dNdlnDp
 
 
-def calc_charged_frac(charge, d_nm):
-    """Wiedensohler 1988, returns charged fraction"""
-    a_coeff = {
-        -2: [-26.3328, 35.9044, -21.4608, 7.0867, -1.3088, 0.1051],
-        -1: [-2.3197, 0.6175, 0.6201, -0.1105, -0.1260, 0.0297],
-        0: [-0.0003, -0.1014, 0.3073, -0.3372, 0.1023, -0.0105],
-        1: [-2.3484, 0.6044, 0.4800, 0.0013, -0.1553, 0.0320],
-        2: [-44.4756, 79.3772, -62.8900, 26.4492, -5.7480, 0.5049],
-    }
-    power_sum = []
-    for i in range(6):
-        power_sum.append((a_coeff[charge][i] * np.log10(d_nm) ** i))
-    charged_frac = 10 ** sum(power_sum)
-    return charged_frac
+# def calc_charged_frac(charge, d_nm):
+#     """Wiedensohler 1988, returns charged fraction"""
+#     a_coeff = {
+#         -2: [-26.3328, 35.9044, -21.4608, 7.0867, -1.3088, 0.1051],
+#         -1: [-2.3197, 0.6175, 0.6201, -0.1105, -0.1260, 0.0297],
+#         0: [-0.0003, -0.1014, 0.3073, -0.3372, 0.1023, -0.0105],
+#         1: [-2.3484, 0.6044, 0.4800, 0.0013, -0.1553, 0.0320],
+#         2: [-44.4756, 79.3772, -62.8900, 26.4492, -5.7480, 0.5049],
+#     }
+#     power_sum = []
+#     for i in range(6):
+#         power_sum.append((a_coeff[charge][i] * np.log10(d_nm) ** i))
+#     charged_frac = 10 ** sum(power_sum)
+#     return charged_frac
 
 
-def calc_slip_correction(d_nm):
-    """Seinfeld and Pandis 2016 (9.34), returns C_c"""
-    mean_free_path = 65.1  # nm
-    slip_correction = 1 + 2 * mean_free_path / d_nm * (
-        1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path))
-    )
-    return slip_correction
+# def calc_slip_correction(d_nm):
+#     """Seinfeld and Pandis 2016 (9.34), returns C_c"""
+#     mean_free_path = 65.1  # nm
+#     slip_correction = 1 + 2 * mean_free_path / d_nm * (
+#         1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path))
+#     )
+#     return slip_correction
 
 
 def calc_diffusion_coeff(d_nm):
     """Seinfeld and Pandis (9.73), returns D = [m^2/s]"""
     k = 1.381e-23  # J/K [Boltzman Constant]
     t = 273  # K [Temperature]
-    c_c = calc_slip_correction(d_nm)  # 1 [Slip Correction]
+    c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
     mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
     d_p = d_nm * 1e-9  # m
     diffusion_coeff = (k * t * c_c) / (3 * np.pi * mu * d_p)
@@ -353,7 +367,7 @@ def calc_mobility_from_dia(d_nm):
     """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
     q = 1.60e-19  # C [1 elementary charge]
     mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
-    c_c = calc_slip_correction(d_nm)  # 1 [Slip Correction]
+    c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
     elec_mobility = (q * c_c) / (3 * np.pi * mu * d_nm * 1e-9)
     elec_mobility_cm = elec_mobility * 1e4
     return elec_mobility_cm
