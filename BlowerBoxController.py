@@ -9,12 +9,21 @@ import yaml
 import sys
 import os
 import time
+import traceback
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from matplotlib import colors
+from matplotlib import dates
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
 
 import blowercontrol
 import shared_var as set
 import datalogging
 import voltagescan
 import cpccounting
+import cpcserial
 
 
 def my_excepthook(type):  # , value, traceback):
@@ -42,8 +51,7 @@ def my_excepthook(type):  # , value, traceback):
 # Set the excepthook
 threading.excepthook = my_excepthook
 
-
-####################Startup####################
+#   ###################Startup####################
 
 # Allow config file to be passed from .bat file or directly from code
 if len(sys.argv) > 1:
@@ -60,8 +68,7 @@ gui_config = config["gui_config"]
 # Load Labjack
 handle = ljm.openS("T7", "ANY", config["labjack"])
 info = ljm.getHandleInfo(handle)
-
-value = 1
+value = 10
 print("Setting LJM_USB_SEND_RECEIVE_TIMEOUT_MS to %.00f milliseconds\n" % value)
 LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
 
@@ -69,7 +76,7 @@ LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
 datalog_barrier = threading.Barrier(2)
-close_barrier = threading.Barrier(6)
+close_barrier = threading.Barrier(7)
 
 
 ####################TKinter Button Functions####################
@@ -113,23 +120,9 @@ def onStart():
     global start_time
     start_time = datetime.now()
 
-    # Reveal the Monitoring controls
-    voltageSetPoint_label.pack()
-    voltageSetPoint_e.pack()
-    supplyVoltage_label.pack()
-    supplyVoltage_e.pack()
-    dia_label.pack()
-    dia_e.pack()
-    count_label.pack()
-    count_e.pack()
-    temp_label.pack()
-    temp_e.pack()
-    rh_label.pack()
-    rh_e.pack()
-    p_label.pack()
-    p_e.pack()
-    flow_label.pack()
-    flow_e.pack()
+    # Start GUI update and graphing
+    update_contourf(np.array([]), np.array([]), np.array([]))
+    update_gui()
 
     # Define and start threads
     global blower_thread
@@ -143,10 +136,6 @@ def onStart():
             close_barrier,
             config["sensor_config"],
             pid,
-            temp_e,
-            rh_e,
-            p_e,
-            flow_e,
         ),
     )
     global voltage_scan_thread
@@ -161,8 +150,6 @@ def onStart():
             close_barrier,
             voltage_scan,
             config["voltage_set_config"],
-            voltageSetPoint_e,
-            dia_e,
         ),
     )
     global voltage_monitor_thread
@@ -175,7 +162,6 @@ def onStart():
             stop_threads,
             close_barrier,
             config["sensor_config"],
-            supplyVoltage_e,
         ),
     )
     global data_logging_thread
@@ -187,6 +173,7 @@ def onStart():
             datalog_barrier,
             close_barrier,
             config["dma"],
+            config["data_config"],
             config["voltage_set_config"],
             file_e,
         ),
@@ -201,14 +188,20 @@ def onStart():
             stop_threads,
             close_barrier,
             config["cpc_config"],
-            count_e,
         ),
+    )
+    global cpc_serial_thread
+    cpc_serial_thread = threading.Thread(
+        name="Serial Read",
+        target=cpcserial.serial_read,
+        args=(stop_threads, close_barrier, config["data_config"]),
     )
     blower_thread.start()
     voltage_scan_thread.start()
     voltage_monitor_thread.start()
     data_logging_thread.start()
     cpc_counting_thread.start()
+    cpc_serial_thread.start()
 
 
 # Close Program
@@ -220,21 +213,15 @@ def onClose():
     global stopThreads
     stopThreads = True
     stop_threads.set()
-    # time.sleep(1)
-    # stop_threads.set()
     close_barrier.wait()
-    # print(cpc_counting_thread.is_alive())
     ljm.close(handle)
-
-    # time.sleep(1)
-    runtime.destroy()
+    root.destroy()
 
 
 # Program to update gui
 def update_gui():
-    count_e.delete(0, "end")
-    # print("here?")
-    count_e.insert(0, set.concentration)
+    conc_e.delete(0, "end")
+    conc_e.insert(0, set.concentration)
     rh_e.delete(0, "end")
     rh_e.insert(0, "%.2f" % set.rh_read)
     flow_e.delete(0, "end")
@@ -249,16 +236,20 @@ def update_gui():
     voltageSetPoint_e.insert(0, "%.2f" % set.ljvoltage_set_out)
     supplyVoltage_e.delete(0, "end")
     supplyVoltage_e.insert(0, "%.2f" % set.voltage_monitor)
+    count_e.delete(0, "end")
+    count_e.insert(0, "%.2f" % set.curr_count)
+    dead_e.delete(0, "end")
+    dead_e.insert(0, "%.2f" % set.pulse_width)
 
-    runtime.update()
-    runtime.after(1000, update_gui)
+    root.update()
+    root.after(1000, update_gui)
 
 
 ####################GUI Creation####################
 # Creates the base canvas for TKinter
-runtime = tk.Tk()
-gui_settings = tk.Frame(runtime)
-gui_settings.pack()
+root = tk.Tk()
+gui_settings = tk.Frame(root)
+gui_settings.grid(row=0, column=0)
 
 ####################Tkinter Widgdets####################
 # Create the TKinter widgets that allow for manual DMA Blower settings
@@ -326,7 +317,6 @@ ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="
     row=2, column=2
 )
 
-
 # Voltage Cycle Button
 voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=4, column=2)
 voltageCycle_b = tk.Button(gui_settings, text="On", command=voltageCycle_callback)
@@ -336,44 +326,179 @@ voltageCycle_b.grid(row=5, column=2)
 start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)
 start_b.grid(row=10, column=0, columnspan=3)
 
+############# Graph
+
+# Create a figure and axis for the contourf plot
+graph_frame = tk.Frame(root)
+graph_frame.grid(row=0, column=2)
+fig = Figure(figsize=(5, 4), dpi=100)
+ax = fig.add_subplot()
+canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+canvas.get_tk_widget().pack()
+
+# time_data = np.array([])
+# dp = np.array([])
+# dndlndp = np.array([])
+
+vm = gui_config["contour_min"]
+VM = gui_config["contour_max"]
+cmap = "jet"
+norm = colors.LogNorm(vmin=vm, vmax=VM)
+
+
+# Create a function to update the contourf plot
+def update_contourf(time_data, dp, dndlndp):
+    print(set.size_bins)
+    if set.graph_line:
+        try:
+            # global time_data
+            if time_data[-1] != np.datetime64(set.graph_line[0][0]):
+                # if strictly_increasing(set.graph_line[0][2:]):
+                if True:
+                    # check if diameters are strictly increasing
+                    time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
+                    # global dp
+                    dp = np.vstack((dp, set.graph_line[0][2:]))
+                    # dp = np.vstack((dp, [1, 2, 3]))
+                    # global dndlndp
+                    dndlndp = np.vstack((dndlndp, set.graph_line[1][1:]))
+                    # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
+                    y = np.arange(0, set.size_bins - 1)
+                    # Scroll the graph
+                    if time_data.shape > (144,):
+                        time_data = np.delete(time_data, 0)
+                        dp = np.delete(dp, 0, 0)
+                        dndlndp = np.delete(dndlndp, 0, 0)
+                    time1, y = np.meshgrid(time_data, y)
+                    if time_data.shape > (1,):
+                        ax.clear()
+                        # ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
+                        ax.contourf(
+                            time1,
+                            dp.T,
+                            dndlndp.T,
+                            np.arange(vm, VM),
+                            cmap=cmap,
+                            norm=norm,
+                            extend="both",
+                        )
+                        ax.set_yscale("log")
+                        ax.set_ylim(1,500)
+                        ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+                        ax.set_ylabel(r"Diameter [nm]", fontsize=10)
+                    # else:
+                    # print("only one line of data")
+                # else:
+                # print("not strictly increasing")
+            # else:
+            # print("not a new timestep")
+
+        except IndexError:
+            # if strictly_increasing(set.graph_line[0][2:]):
+            if True:
+                dt_array = np.empty(0, dtype="datetime64")
+                time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
+                dp = np.asarray(set.graph_line[0][2:])
+                # dp = np.asarray([1, 2, 3])
+                dndlndp = np.asarray(set.graph_line[1][1:])
+                # dndlndp = np.asarray(np.random.rand(3))
+            # print(time_data, dp, dndlndp)
+            print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
+
+        except Exception:
+            print(sys.exc_info()[0])
+            print(sys.exc_info()[1])
+            print(traceback.format_exc())
+    else:
+        print("no data yet")
+
+    # Redraw the canvas
+    canvas.draw()
+
+    # Schedule the function to be called again after 10 seconds
+    root.after(60000, lambda: update_contourf(time_data, dp, dndlndp))
+
+
+def strictly_increasing(L):
+    return all(x < y for x, y in zip(L, L[1:]))
+
+
 ####################Initally Hidden Tkinter Widgets####################
+monitor = tk.Frame(root)
+monitor.grid(row=0, column=1)
+dma_monitor = tk.Frame(monitor)
+dma_monitor.grid(row=0)
+flow_monitor = tk.Frame(monitor)
+flow_monitor.grid(row=1)
+conc_monitor = tk.Frame(monitor)
+conc_monitor.grid(row=2)
+
+tk.Label(dma_monitor, text="DMA Size Selection", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
 
 # Current Set Voltage
-voltageSetPoint_label = tk.Label(runtime, text="Set Voltage")
-voltageSetPoint_e = tk.Entry(runtime)
+voltageSetPoint_label = tk.Label(dma_monitor, text="Set Voltage").grid(row=1, column=0)
+voltageSetPoint_e = tk.Entry(dma_monitor)
+voltageSetPoint_e.grid(row=1, column=1)
 
 # Current Monitor Voltage
-supplyVoltage_label = tk.Label(runtime, text="Supply Voltage")
-supplyVoltage_e = tk.Entry(runtime)
-
-# Define current temperature label
-temp_label = tk.Label(runtime, text="Temperature (C)")
-temp_e = tk.Entry(runtime)
-
-# Define current RH label
-rh_label = tk.Label(runtime, text="Relative Humidity")
-rh_e = tk.Entry(runtime)
-
-# Define current pressure label
-p_label = tk.Label(runtime, text="Pressure")
-p_e = tk.Entry(runtime)
-
-# Define flow rate label
-flow_label = tk.Label(runtime, text="Flow sLPM")
-flow_e = tk.Entry(runtime)
+supplyVoltage_label = tk.Label(dma_monitor, text="Supply Voltage").grid(row=2, column=0)
+supplyVoltage_e = tk.Entry(dma_monitor)
+supplyVoltage_e.grid(row=2, column=1)
 
 # Define diameter label
-dia_label = tk.Label(runtime, text="Diameter (nm)")
-dia_e = tk.Entry(runtime)
+dia_label = tk.Label(dma_monitor, text="Diameter (nm)").grid(row=3, column=0)
+dia_e = tk.Entry(dma_monitor)
+dia_e.grid(row=3, column=1)
+
+tk.Label(flow_monitor, text="DMA Flow Parameters", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
+
+# Define flow rate label
+flow_label = tk.Label(flow_monitor, text="Flow sLPM").grid(row=1, column=0)
+flow_e = tk.Entry(flow_monitor)
+flow_e.grid(row=1, column=1)
+
+# Define current temperature label
+temp_label = tk.Label(flow_monitor, text="Temperature (C)").grid(row=2, column=0)
+temp_e = tk.Entry(flow_monitor)
+temp_e.grid(row=2, column=1)
+
+# Define current RH label
+rh_label = tk.Label(flow_monitor, text="Relative Humidity").grid(row=3, column=0)
+rh_e = tk.Entry(flow_monitor)
+rh_e.grid(row=3, column=1)
+
+# Define current pressure label
+p_label = tk.Label(flow_monitor, text="Pressure").grid(row=4, column=0)
+p_e = tk.Entry(flow_monitor)
+p_e.grid(row=4, column=1)
+
+tk.Label(conc_monitor, text="CPC Pulse Counting", font=("TkDefaultFont", 9, "bold")).grid(
+    row=0, column=0, columnspan=2
+)
 
 # Define cpc count label
-count_label = tk.Label(runtime, text="Counts #/cc")
-count_e = tk.Entry(runtime)
+conc_label = tk.Label(conc_monitor, text="Concentration #/cc").grid(row=1, column=0)
+conc_e = tk.Entry(conc_monitor)
+conc_e.grid(row=1, column=1)
 
-runtime.after(1000, update_gui)
+# Define cpc count label
+count_label = tk.Label(conc_monitor, text="Counts #").grid(row=2, column=0)
+count_e = tk.Entry(conc_monitor)
+count_e.grid(row=2, column=1)
+
+# Define cpc count label
+dead_label = tk.Label(conc_monitor, text="Deadtime (s)").grid(row=3, column=0)
+dead_e = tk.Entry(conc_monitor)
+dead_e.grid(row=3, column=1)
+
 
 #############################################################
 # Populate the root window with navigation buttons
-runtime.protocol("WM_DELETE_WINDOW", onClose)
-runtime.mainloop()
+root.protocol("WM_DELETE_WINDOW", onClose)
+root.mainloop()
 """"""
