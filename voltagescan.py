@@ -47,13 +47,26 @@ def hv(
                 if ljvoltage > 10000:
                     ljvoltage = 10000
 
-                # Set Voltage to Labjack
-                ljm.eWriteName(
-                    handle,
-                    labjack_io["voltage_set_output"],
-                    ljvoltage / voltage_config["voltage_set_factor"]
-                    - voltage_config["voltage_offset_calibration"],
-                )
+                if shared_var.scan_polarity == "positive":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_pos"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_neg"], 0)
+
+                elif shared_var.scan_polarity == "negative":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_neg"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_pos"], 0)
+
                 shared_var.ljvoltage_set_out = ljvoltage
 
                 # Update Diameter
@@ -83,12 +96,25 @@ def hv(
                     print("Shutdown: Voltage Set")
                     break
 
-                # Send voltage to Labjack
-                ljm.eWriteName(
-                    handle,
-                    labjack_io["voltage_set_output"],
-                    ljvoltage / voltage_config["voltage_set_factor"],
-                )
+                if shared_var.scan_polarity == "positive":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_pos"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_neg"], 0)
+
+                elif shared_var.scan_polarity == "negative":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_neg"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_pos"], 0)
 
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
