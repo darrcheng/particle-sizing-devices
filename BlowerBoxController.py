@@ -383,6 +383,7 @@ def update_contourf(time_data, dp, dndlndp):
                             extend="both",
                         )
                         ax.set_yscale("log")
+                        ax.set_ylim(1,500)
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
                         ax.set_ylabel(r"Diameter [nm]", fontsize=10)
                     # else:
