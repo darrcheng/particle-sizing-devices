@@ -59,7 +59,7 @@ def cpc_conc(handle, labjack_io, stop_threads, close_barrier, cpc_config):
 
             # Read the current count from the high-speed counter
             count = ljm.eReadName(handle, labjack_io["counter"] + "_EF_READ_A")
-            print("y")
+            # print("y")
             shared_var.curr_count = count - prev_count
 
             # Calculate the elapsed time since the last count
