@@ -1,5 +1,13 @@
 ---
 dma: "longdma"
+threads:
+  "blower" : True
+  "voltage_scan" : True
+  "voltage_monitor" : True
+  "datalogging" : True
+  "cpc_counting" : True
+  "cpc_serial" : True
+  "cpc_fill" : False
 data_config:
   "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
   "serial_commands": ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]
@@ -9,6 +17,8 @@ data_config:
   "serial_bytesize": 8
   "serial_parity": "N"
   "serial_timeout": 0.05
+  "start_commands" : []
+  "fill_index": 10
 labjack : 470024266
 labjack_io :
   "flow_read_input": "AIN0"
@@ -20,6 +30,7 @@ labjack_io :
   "flow_set_output": "TDAC2"
   "counter": "DIO18"
   "width": "DIO0"
+  "fill_valve" : "nan"
 cpc_config:
   "cpc_flowrate" : 16.6667 # 300/60 cubic centimeters per second
 voltage_set_config:
@@ -47,6 +58,8 @@ gui_config:
   "default_mode" : "dia_list"
   "contour_min" : 10
   "contour_max" : 1000
+  "y_min" : 1
+  "y_max" : 500
 pid_config:
   "pidp" : 0.2
   "pidi" : 0
