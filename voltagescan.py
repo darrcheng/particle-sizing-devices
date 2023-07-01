@@ -115,14 +115,14 @@ def calc_voltages(voltage_config):
     dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
     dma_sheath = shared_var.blower_flow_set * 1000  # sccm
 
-    # Calculate set voltages using list of diameters
+    # Calculate scan details from diameter list
     if shared_var.diameter_mode == "dia_list":
         diameters = np.array(shared_var.dia_list, dtype=float)
         shared_var.size_bins = len(diameters)
         shared_var.low_dia_lim = min(diameters)
         shared_var.high_dia_lim = max(diameters)
 
-    # Calculate set voltages using low/high limits
+    # Calculate voltage bins using low/high limits
     else:
         diameters = np.logspace(
             np.log(shared_var.low_dia_lim),
