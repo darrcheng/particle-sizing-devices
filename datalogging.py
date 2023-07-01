@@ -269,6 +269,8 @@ def create_files(dma, header, cpc_header, file_e):
 
 
 def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
+    """Stolzenburg 2008 (Eqn. 27), returns concentration particle/(cm^3*s)"""
+    # Not including CPC activation or sample tube penetration
     q_a = q_a_ccm  # ccm [Aerosol Inlet Flowrate]
     q_s = q_a_ccm  # ccm [Aerosol Outlet Flowrate]
     q_c = q_c_ccm  # ccm [Sheath Flowrate]
