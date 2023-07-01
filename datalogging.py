@@ -71,7 +71,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                     voltage_config["dma_inner_radius"],
                     previous_calc_diameter,
                 )
-            else:
+            if calculated_dia < 0:
                 calculated_dia = mobilitycalc.calc_dia_from_voltage(
                     shared_var.voltage_monitor,
                     shared_var.flow_read * 1000,
