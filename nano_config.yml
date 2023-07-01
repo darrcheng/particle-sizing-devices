@@ -9,6 +9,8 @@ data_config:
   "serial_bytesize": 7
   "serial_parity": "E"
   "serial_timeout": 0.05
+  "start_commands" : []
+  "fill_index": 10
 labjack : 470024288
 labjack_io :
   "flow_read_input": "AIN0"

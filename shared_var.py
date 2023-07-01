@@ -37,6 +37,7 @@ concentration = 0
 concentration_nodead = 0
 pulse_width = 0
 pulse_width_error = 0
+fill_status = ""
 # cpc_flowrate = 300 / 60  # cubic centimeters per second
 
 # Runtime

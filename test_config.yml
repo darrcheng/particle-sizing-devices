@@ -1,5 +1,16 @@
 ---
 dma: "test"
+data_config:
+  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "serial_commands": ['RD','R1','R2','R3','R4','R5','R6','R7','RE','RB','R0']
+  "cpc_header" :  ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
+  "serial_port": "COM6"
+  "serial_baud": 9600
+  "serial_bytesize": 7
+  "serial_parity": "E"
+  "serial_timeout": 0.05
+  "start_commands" : []
+  "fill_index": 10
 labjack : "ANY"
 labjack_io :
   "flow_read_input": "AIN0"
@@ -36,6 +47,8 @@ gui_config:
   "blower_flow_set" : 15 # LPM
   "diameter_list" : [2.798,3.048,3.320,3.616,3.938,4.289,4.671,5.088,5.543,6.038,6.578,7.166,7.808,8.507,9.270,10.103,11.011,12.002,13.083,14.264,15.553,16.960,18.499,20.180,22.017,24.027,26.227,28.635,31.271,34.141,29.933,32.517,35.328,38.391,41.741,45.402,49.409,53.797,58.610,63.896,69.709,76.108,83.172,90.981,99.623,109.225,119.907,131.819,145.134,160.063,176.857,195.823,217.269,241.614,269.325,300.963,337.176,378.691,426.428,481.080,141.400,244.900,346.400,447.200,591.600,836.700,1414.000,4472.000]
   "default_mode" : "scan"
+  "contour_min" : 0.0001
+  "contour_max" : 10
 pid_config:
   "pidp" : 0.2
   "pidi" : 0

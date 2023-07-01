@@ -21,6 +21,12 @@ def serial_read(stop_threads, close_barrier, data_config):
     )
     ser.flushInput()
 
+    # Send startup commands
+    if data_config["start_commands"]:
+        for start_command in data_config["start_commands"]:
+            ser.write((start_command + "\r").encode())
+            ser.readline().decode().rstrip()
+
     # Send commands and record responses
     commands = data_config["serial_commands"]
 
@@ -40,7 +46,9 @@ def serial_read(stop_threads, close_barrier, data_config):
                 # Append response to the list
                 responses.extend(response)
 
-            shared_var.cpc_serial_read = [datetime.now()]+responses
+            # Share CPC data with other threads
+            shared_var.cpc_serial_read = [datetime.now()] + responses
+            shared_var.fill_status = responses[data_config["fill_index"]]
 
             # Calculate runtime
             shared_var.serial_runtime = time.monotonic() - curr_time - update_time
@@ -63,4 +71,3 @@ def serial_read(stop_threads, close_barrier, data_config):
     print("Shutdown: CPC Serial Read")
     ser.close()
     close_barrier.wait()
-
