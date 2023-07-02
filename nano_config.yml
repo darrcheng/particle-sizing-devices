@@ -16,8 +16,8 @@ labjack_io :
   "press_input": "AIN2"
   "temp_input": "AIN3"
   "rh_input": "AIN4"
-  "voltage_set_output_pos": "DAC0"
-  "voltage_set_output_neg": "DAC0"
+  "voltage_set_output_pos": "TDAC4"
+  "voltage_set_output_neg": "TDAC5"
   "flow_set_output": "TDAC2"
   "counter": "DIO18"
   "width": "DIO0"
@@ -51,5 +51,5 @@ gui_config:
   "scan_polarity": "positive"
 pid_config:
   "pidp" : 0.2
-  "pidi" : 0.1
+  "pidi" : 0 #0.1
   "pidd" : 0

@@ -181,11 +181,18 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config):
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
             )
-            # Set voltage monitor minimum
-            if voltage_monitor <= 0:
-                shared_var.voltage_monitor = 0.001
-            else:
-                shared_var.voltage_monitor = voltage_monitor
+            if shared_var.scan_polarity == "positive":
+                # Set voltage monitor minimum
+                if voltage_monitor <= 0:
+                    shared_var.voltage_monitor = 0.001
+                else:
+                    shared_var.voltage_monitor = voltage_monitor
+            elif shared_var.scan_polarity == "negative":
+                # Set voltage monitor minimum
+                if voltage_monitor >= 0:
+                    shared_var.voltage_monitor = -0.001
+                else:
+                    shared_var.voltage_monitor = voltage_monitor
 
             # Calculate runtime
             shared_var.voltage_monitor_runtime = time.monotonic() - curr_time - update_time
