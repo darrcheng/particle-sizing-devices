@@ -29,6 +29,7 @@ voltage_monitor = 1  # Current voltage read from HV supply monitor
 set_diameter = 0
 dia_list = []
 diameter_mode = ""
+scan_polarity = ""
 # voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
 # CPC Variables

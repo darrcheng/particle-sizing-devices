@@ -11,7 +11,7 @@ threads:
 data_config:
   "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
   "serial_commands": ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]
-  "cpc_header" :  ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number"] 
+  "cpc_header" :  ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number","corrected counts","uncorrected counts"] 
   "serial_port": "COM5"
   "serial_baud": 115200
   "serial_bytesize": 8
@@ -26,7 +26,8 @@ labjack_io :
   "press_input": "AIN2"
   "temp_input": "AIN3"
   "rh_input": "AIN4"
-  "voltage_set_output": "TDAC4"
+  "voltage_set_output_pos": "TDAC4"
+  "voltage_set_output_neg": "TDAC5"
   "flow_set_output": "TDAC2"
   "counter": "DIO18"
   "width": "DIO0"
@@ -34,8 +35,8 @@ labjack_io :
 cpc_config:
   "cpc_flowrate" : 16.6667 # 300/60 cubic centimeters per second
 voltage_set_config:
-  "voltage_set_factor" : 2000 #1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
-  "voltage_offset_calibration" : 0 #0.004585 
+  "voltage_set_factor" : 2001 #1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
+  "voltage_offset_calibration" : 0.00244802921 #0.004585 
   "dma_outer_radius" : 1.92659
   "dma_inner_radius" : 0.94266
   "dma_length" : 44.348
@@ -46,8 +47,8 @@ sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
   "flow_offset" : 0.9947
-  "voltage_factor" : 2000 #894.2144
-  "voltage_offset" : 0 # 0.011578
+  "voltage_factor" : 2017.8 #2000*1.0089
+  "voltage_offset" : -0.014157 # 29.93/2017.8
 gui_config:
   "low_dia_lim" : 10
   "high_dia_lim" : 600  
@@ -60,6 +61,7 @@ gui_config:
   "contour_max" : 1000
   "y_min" : 1
   "y_max" : 500
+  "scan_polarity": "positive"
 pid_config:
   "pidp" : 0.2
   "pidi" : 0

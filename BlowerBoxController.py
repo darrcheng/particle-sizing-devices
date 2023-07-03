@@ -119,6 +119,7 @@ def onStart():
     set.blower_flow_set = int(blowerFlow_e.get())
     set.dia_list = dia_list_e.get().split(" ")
     set.diameter_mode = dia_option.get()
+    set.scan_polarity = polarity_option.get()
 
     # Configure PID Controller
     global pid
@@ -336,20 +337,31 @@ data_storage_label = tk.Label(gui_settings, text="Data Storage (File Location)")
 file_e = tk.Entry(gui_settings, width=70)
 file_e.grid(row=9, column=0, columnspan=3)
 
-# Radiobutton
+# Scan Mode
 dia_option = tk.StringVar()
 dia_option.set(gui_config["default_mode"])
 ttk.Radiobutton(gui_settings, text="Diameter List", variable=dia_option, value="dia_list").grid(
-    row=1, column=2
-)
-ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="interval").grid(
     row=2, column=2
 )
+ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="interval").grid(
+    row=3, column=2
+)
+
+# Scan Polarity
+polarity_option = tk.StringVar()
+polarity_option.set(gui_config["scan_polarity"])
+ttk.Radiobutton(gui_settings, text="Positive", variable=polarity_option, value="positive").grid(
+    row=4, column=2
+)
+ttk.Radiobutton(gui_settings, text="Negative", variable=polarity_option, value="negative").grid(
+    row=5, column=2
+)
+
 
 # Voltage Cycle Button
-voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=4, column=2)
+voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=6, column=2)
 voltageCycle_b = tk.Button(gui_settings, text="On", command=voltageCycle_callback)
-voltageCycle_b.grid(row=5, column=2)
+voltageCycle_b.grid(row=7, column=2)
 
 # Start Button
 start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)

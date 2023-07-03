@@ -47,13 +47,26 @@ def hv(
                 if ljvoltage > 10000:
                     ljvoltage = 10000
 
-                # Set Voltage to Labjack
-                ljm.eWriteName(
-                    handle,
-                    labjack_io["voltage_set_output"],
-                    ljvoltage / voltage_config["voltage_set_factor"]
-                    - voltage_config["voltage_offset_calibration"],
-                )
+                if shared_var.scan_polarity == "positive":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_pos"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_neg"], 0)
+
+                elif shared_var.scan_polarity == "negative":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_neg"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_pos"], 0)
+
                 shared_var.ljvoltage_set_out = ljvoltage
 
                 # Update Diameter
@@ -83,12 +96,25 @@ def hv(
                     print("Shutdown: Voltage Set")
                     break
 
-                # Send voltage to Labjack
-                ljm.eWriteName(
-                    handle,
-                    labjack_io["voltage_set_output"],
-                    ljvoltage / voltage_config["voltage_set_factor"],
-                )
+                if shared_var.scan_polarity == "positive":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_pos"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_neg"], 0)
+
+                elif shared_var.scan_polarity == "negative":
+                    # Set Voltage to Labjack
+                    ljm.eWriteName(
+                        handle,
+                        labjack_io["voltage_set_output_neg"],
+                        ljvoltage / voltage_config["voltage_set_factor"]
+                        - voltage_config["voltage_offset_calibration"],
+                    )
+                    ljm.eWriteName(handle, labjack_io["voltage_set_output_pos"], 0)
 
         except ljm.LJMError:
             ljme = sys.exc_info()[1]
@@ -115,14 +141,14 @@ def calc_voltages(voltage_config):
     dma_inner_radius = voltage_config["dma_inner_radius"]  # cm
     dma_sheath = shared_var.blower_flow_set * 1000  # sccm
 
-    # Calculate set voltages using list of diameters
+    # Calculate scan details from diameter list
     if shared_var.diameter_mode == "dia_list":
         diameters = np.array(shared_var.dia_list, dtype=float)
         shared_var.size_bins = len(diameters)
         shared_var.low_dia_lim = min(diameters)
         shared_var.high_dia_lim = max(diameters)
 
-    # Calculate set voltages using low/high limits
+    # Calculate voltage bins using low/high limits
     else:
         diameters = np.logspace(
             np.log(shared_var.low_dia_lim),
@@ -155,11 +181,18 @@ def vIn(handle, labjack_io, stop_threads, close_barrier, sensor_config):
                 sensor_config["voltage_factor"],
                 sensor_config["voltage_offset"],
             )
-            # Set voltage monitor minimum
-            if voltage_monitor <= 0:
-                shared_var.voltage_monitor = 0.001
-            else:
-                shared_var.voltage_monitor = voltage_monitor
+            if shared_var.scan_polarity == "positive":
+                # Set voltage monitor minimum
+                if voltage_monitor <= 0:
+                    shared_var.voltage_monitor = 0.001
+                else:
+                    shared_var.voltage_monitor = voltage_monitor
+            elif shared_var.scan_polarity == "negative":
+                # Set voltage monitor minimum
+                if voltage_monitor >= 0:
+                    shared_var.voltage_monitor = -0.001
+                else:
+                    shared_var.voltage_monitor = voltage_monitor
 
             # Calculate runtime
             shared_var.voltage_monitor_runtime = time.monotonic() - curr_time - update_time
