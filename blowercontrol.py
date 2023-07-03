@@ -18,7 +18,6 @@ def blower(handle, labjack_io, stop_threads, close_barrier, sensor_config, pid):
     # Constants for flow intervals
     curr_time = time.monotonic()
     flow_update_time = 0.500  # seconds
-    # flow_count = 0
 
     # Infinite Loop
     while not stop_threads.is_set():

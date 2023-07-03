@@ -24,6 +24,7 @@ import datalogging
 import voltagescan
 import cpccounting
 import cpcserial
+import cpcfill
 
 
 def my_excepthook(type):  # , value, traceback):
@@ -75,8 +76,21 @@ LJMError = ljm.writeLibraryConfigS("LJM_USB_SEND_RECEIVE_TIMEOUT_MS", value)
 # Create threading events setting flags to control other flags
 stop_threads = threading.Event()
 voltage_scan = threading.Event()
-datalog_barrier = threading.Barrier(2)
-close_barrier = threading.Barrier(7)
+
+# Create barriers for thread control
+thread_config = config["threads"]
+num_threads = (
+    thread_config["blower"]
+    + thread_config["voltage_scan"]
+    + thread_config["voltage_monitor"]
+    + thread_config["datalogging"]
+    + thread_config["cpc_counting"]
+    + thread_config["cpc_serial"]
+    + thread_config["cpc_fill"]
+)
+num_data_threads = thread_config["voltage_scan"] + thread_config["datalogging"]
+datalog_barrier = threading.Barrier(num_data_threads)
+close_barrier = threading.Barrier(num_threads + 1)
 
 
 ####################TKinter Button Functions####################
@@ -125,7 +139,7 @@ def onStart():
     update_contourf(np.array([]), np.array([]), np.array([]))
     update_gui()
 
-    # Define and start threads
+    # Define threads
     global blower_thread
     blower_thread = threading.Thread(
         name="Blower Monitoring",
@@ -197,12 +211,27 @@ def onStart():
         target=cpcserial.serial_read,
         args=(stop_threads, close_barrier, config["data_config"]),
     )
-    blower_thread.start()
-    voltage_scan_thread.start()
-    voltage_monitor_thread.start()
-    data_logging_thread.start()
-    cpc_counting_thread.start()
-    cpc_serial_thread.start()
+    global cpc_fill_thread
+    cpc_fill_thread = threading.Thread(
+        name="CPC Fill",
+        target=cpcfill.cpc_fill,
+        args=(handle, config["labjack_io"], stop_threads, close_barrier),
+    )
+    # Start threads
+    if thread_config["blower"]:
+        blower_thread.start()
+    if thread_config["voltage_scan"]:
+        voltage_scan_thread.start()
+    if thread_config["voltage_monitor"]:
+        voltage_monitor_thread.start()
+    if thread_config["datalogging"]:
+        data_logging_thread.start()
+    if thread_config["cpc_counting"]:
+        cpc_counting_thread.start()
+    if thread_config["cpc_serial"]:
+        cpc_serial_thread.start()
+    if thread_config["cpc_fill"]:
+        cpc_fill_thread.start()
 
 
 # Close Program
@@ -348,14 +377,11 @@ ax = fig.add_subplot()
 canvas = FigureCanvasTkAgg(fig, master=graph_frame)
 canvas.get_tk_widget().pack()
 
-# time_data = np.array([])
-# dp = np.array([])
-# dndlndp = np.array([])
 
-vm = gui_config["contour_min"]
-VM = gui_config["contour_max"]
+cbar_min = gui_config["contour_min"]
+cbar_max = gui_config["contour_max"]
 cmap = "jet"
-norm = colors.LogNorm(vmin=vm, vmax=VM)
+norm = colors.LogNorm(vmin=cbar_min, vmax=cbar_max)
 
 
 # Create a function to update the contourf plot
@@ -363,58 +389,57 @@ def update_contourf(time_data, dp, dndlndp):
     print(set.size_bins)
     if set.graph_line:
         try:
-            # global time_data
+            # Check for a new timestep
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
-                # if strictly_increasing(set.graph_line[0][2:]):
                 if True:
-                    # check if diameters are strictly increasing
+                    # Check if diameters are strictly increasing
                     time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
-                    # global dp
+
+                    # Add new diameters to graph data
                     dp = np.vstack((dp, set.graph_line[0][2:]))
-                    # dp = np.vstack((dp, [1, 2, 3]))
-                    # global dndlndp
+
+                    # Add new data to graph data
                     dndlndp = np.vstack((dndlndp, set.graph_line[1][1:]))
-                    # dndlndp = np.vstack((dndlndp, np.random.rand(3)))
-                    y = np.arange(0, set.size_bins - 1)
+
                     # Scroll the graph
                     if time_data.shape > (144,):
                         time_data = np.delete(time_data, 0)
                         dp = np.delete(dp, 0, 0)
                         dndlndp = np.delete(dndlndp, 0, 0)
+
+                    # Create meshgrid for time
+                    y = np.arange(0, set.size_bins - 1)
                     time1, y = np.meshgrid(time_data, y)
+
+                    # Plot contour if there's more than one row of data
                     if time_data.shape > (1,):
                         ax.clear()
-                        # ax.contourf(time1, dp.T, dndlndp.T, cmap=cmap, extend="both")
                         ax.contourf(
                             time1,
                             dp.T,
                             dndlndp.T,
-                            np.arange(vm, VM),
+                            np.arange(cbar_min, cbar_max),
                             cmap=cmap,
                             norm=norm,
                             extend="both",
                         )
                         ax.set_yscale("log")
-                        ax.set_ylim(1, 500)
+                        ax.set_ylim(gui_config["y_min"], gui_config["y_max"])
                         ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
                         ax.set_ylabel(r"Diameter [nm]", fontsize=10)
-                    # else:
-                    # print("only one line of data")
-                # else:
-                # print("not strictly increasing")
-            # else:
-            # print("not a new timestep")
 
         except IndexError:
-            # if strictly_increasing(set.graph_line[0][2:]):
+            # First line of data
             if True:
+                # Add time data
                 dt_array = np.empty(0, dtype="datetime64")
                 time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
+
+                # Add diameter data
                 dp = np.asarray(set.graph_line[0][2:])
-                # dp = np.asarray([1, 2, 3])
+
+                # Add concentration data
                 dndlndp = np.asarray(set.graph_line[1][1:])
-                # dndlndp = np.asarray(np.random.rand(3))
-            # print(time_data, dp, dndlndp)
             print(sys.exc_info()[0])
             print(sys.exc_info()[1])
 
@@ -423,17 +448,17 @@ def update_contourf(time_data, dp, dndlndp):
             print(sys.exc_info()[1])
             print(traceback.format_exc())
     else:
-        print("no data yet")
+        print("No data yet")
 
     # Redraw the canvas
     canvas.draw()
 
-    # Schedule the function to be called again after 10 seconds
+    # Schedule the function to be called again after 1 minute
     root.after(60000, lambda: update_contourf(time_data, dp, dndlndp))
 
 
-def strictly_increasing(L):
-    return all(x < y for x, y in zip(L, L[1:]))
+# def strictly_increasing(L):
+#     return all(x < y for x, y in zip(L, L[1:]))
 
 
 ####################Initally Hidden Tkinter Widgets####################
