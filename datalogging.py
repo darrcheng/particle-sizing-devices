@@ -52,7 +52,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
             b.wait()
 
             # Calculate Diameter
-            calculated_dia = calc_dia_from_voltage(
+            calculated_dia = mobilitycalc.calc_dia_from_voltage(
                 shared_var.voltage_monitor,
                 shared_var.flow_read * 1000,
                 shared_var.flow_read * 1000,
@@ -62,7 +62,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                 shared_var.set_diameter,
             )
             if calculated_dia < 0 and previous_calc_diameter != 0:
-                calculated_dia = calc_dia_from_voltage(
+                calculated_dia = mobilitycalc.calc_dia_from_voltage(
                     shared_var.voltage_monitor,
                     shared_var.flow_read * 1000,
                     shared_var.flow_read * 1000,
@@ -70,6 +70,16 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                     voltage_config["dma_outer_radius"],
                     voltage_config["dma_inner_radius"],
                     previous_calc_diameter,
+                )
+            if calculated_dia < 0:
+                calculated_dia = mobilitycalc.calc_dia_from_voltage(
+                    shared_var.voltage_monitor,
+                    shared_var.flow_read * 1000,
+                    shared_var.flow_read * 1000,
+                    voltage_config["dma_length"],
+                    voltage_config["dma_outer_radius"],
+                    voltage_config["dma_inner_radius"],
+                    0.001,
                 )
             previous_calc_diameter = calculated_dia
             # Invert data
@@ -259,12 +269,14 @@ def create_files(dma, header, cpc_header, file_e):
 
 
 def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
+    """Stolzenburg 2008 (Eqn. 27), returns concentration particle/(cm^3*s)"""
+    # Not including CPC activation or sample tube penetration
     q_a = q_a_ccm  # ccm [Aerosol Inlet Flowrate]
     q_s = q_a_ccm  # ccm [Aerosol Outlet Flowrate]
     q_c = q_c_ccm  # ccm [Sheath Flowrate]
     q_m = q_c_ccm  # ccm [Excess Flowrate]
     diameters = np.array([shared_var.low_dia_lim, shared_var.high_dia_lim])
-    elec_mobility = calc_mobility_from_dia(diameters)
+    elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
     dlnDp = np.log(diameters[1]) - np.log(diameters[0])
     a_star = -dlnZp / dlnDp
@@ -274,7 +286,7 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
         d_p = 1.00001
     charge_frac = mobilitycalc.calc_charged_frac(aerosol_charge, d_p)
     cpc_active_eff = 1
-    dma_penetration = calc_dma_penetration(d_p, l_eff_m, q_a)
+    dma_penetration = mobilitycalc.calc_dma_penetration(d_p, l_eff_m, q_a)
     sample_tube_penetration = 1
     penetrate_eff = dma_penetration * sample_tube_penetration
     dNdlnDp = (N * a_star) / (
@@ -308,100 +320,102 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
 #     return slip_correction
 
 
-def calc_diffusion_coeff(d_nm):
-    """Seinfeld and Pandis (9.73), returns D = [m^2/s]"""
-    k = 1.381e-23  # J/K [Boltzman Constant]
-    t = 273  # K [Temperature]
-    c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
-    mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
-    d_p = d_nm * 1e-9  # m
-    diffusion_coeff = (k * t * c_c) / (3 * np.pi * mu * d_p)
-    return diffusion_coeff
+# def calc_diffusion_coeff(d_nm):
+#     """Seinfeld and Pandis (9.73), returns D = [m^2/s]"""
+#     k = 1.381e-23  # J/K [Boltzman Constant]
+#     t = 273  # K [Temperature]
+#     c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
+#     mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
+#     d_p = d_nm * 1e-9  # m
+#     diffusion_coeff = (k * t * c_c) / (3 * np.pi * mu * d_p)
+#     return diffusion_coeff
 
 
-def calc_deposition_param(d_nm, l_eff_m, q_sample_sccm):
-    """Jiang 2011 (Eqn. 8), returns mu"""
-    d = calc_diffusion_coeff(d_nm)  # m^2/s [Diffusion coefficient]
-    q_cm_s = q_sample_sccm / 60  # cm^3/s
-    q_m_s = q_cm_s * 1e-6  # m^3/s
-    deposition_param = (np.pi * d * l_eff_m) / q_m_s
-    return deposition_param
+# def calc_deposition_param(d_nm, l_eff_m, q_sample_sccm):
+#     """Jiang 2011 (Eqn. 8), returns mu"""
+#     d = mobilitycalc.calc_diffusion_coeff(d_nm)  # m^2/s [Diffusion coefficient]
+#     q_cm_s = q_sample_sccm / 60  # cm^3/s
+#     q_m_s = q_cm_s * 1e-6  # m^3/s
+#     deposition_param = (np.pi * d * l_eff_m) / q_m_s
+#     return deposition_param
 
 
-def calc_dma_penetration(d_nm, l_eff_m, q_sample_sccm):
-    """Jiang 2011 (Eqn. 9 & 10), returns dma penetration efficiency"""
-    mu = calc_deposition_param(d_nm, l_eff_m, q_sample_sccm)  # 1 [Deposition Parameter]
-    if mu > 0.02:
-        penetration_eff = (
-            0.819 * np.exp(-3.66 * mu)
-            + 0.0975 * np.exp(-22.3 * mu)
-            + 0.0325 * np.exp(-57.0 * mu)
-            + 0.0154 * np.exp(-107.6 * mu)
-        )
-    else:
-        penetration_eff = 1.0 - 2.56 * mu ** (2 / 3) + 1.2 * mu + 0.1767 * mu ** (4 / 3)
-    return penetration_eff
+# def calc_dma_penetration(d_nm, l_eff_m, q_sample_sccm):
+#     """Jiang 2011 (Eqn. 9 & 10), returns dma penetration efficiency"""
+#     mu = mobilitycalc.calc_deposition_param(
+#         d_nm, l_eff_m, q_sample_sccm
+#     )  # 1 [Deposition Parameter]
+#     if mu > 0.02:
+#         penetration_eff = (
+#             0.819 * np.exp(-3.66 * mu)
+#             + 0.0975 * np.exp(-22.3 * mu)
+#             + 0.0325 * np.exp(-57.0 * mu)
+#             + 0.0154 * np.exp(-107.6 * mu)
+#         )
+#     else:
+#         penetration_eff = 1.0 - 2.56 * mu ** (2 / 3) + 1.2 * mu + 0.1767 * mu ** (4 / 3)
+#     return penetration_eff
 
 
-def calc_mobility_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm):
-    """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
-    q_sheath = q_sheath_ccm / 60  # cm^3/s
-    q_excess = q_excess_ccm / 60  # cm^3/s
-    elec_mobility = (
-        (q_sheath + q_excess) / (4 * np.pi * volt * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
-    )
-    return elec_mobility
+# def calc_mobility_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm):
+#     """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
+#     q_sheath = q_sheath_ccm / 60  # cm^3/s
+#     q_excess = q_excess_ccm / 60  # cm^3/s
+#     elec_mobility = (
+#         (q_sheath + q_excess) / (4 * np.pi * volt * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
+#     )
+#     return elec_mobility
 
 
-def calc_voltage_from_mobility(
-    mobil_cm, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
-):
-    """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
-    q_sheath = q_sheath_ccm / 60  # cm^3/s
-    q_excess = q_excess_ccm / 60  # cm^3/s
-    volt = (q_sheath + q_excess) / (4 * np.pi * mobil_cm * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
-    return volt
+# def calc_voltage_from_mobility(
+#     mobil_cm, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
+# ):
+#     """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
+#     q_sheath = q_sheath_ccm / 60  # cm^3/s
+#     q_excess = q_excess_ccm / 60  # cm^3/s
+#     volt = (q_sheath + q_excess) / (4 * np.pi * mobil_cm * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
+#     return volt
 
 
-def calc_mobility_from_dia(d_nm):
-    """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
-    q = 1.60e-19  # C [1 elementary charge]
-    mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
-    c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
-    elec_mobility = (q * c_c) / (3 * np.pi * mu * d_nm * 1e-9)
-    elec_mobility_cm = elec_mobility * 1e4
-    return elec_mobility_cm
+# def calc_mobility_from_dia(d_nm):
+#     """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
+#     q = 1.60e-19  # C [1 elementary charge]
+#     mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
+#     c_c = mobilitycalc.calc_slip_correction(d_nm)  # 1 [Slip Correction]
+#     elec_mobility = (q * c_c) / (3 * np.pi * mu * d_nm * 1e-9)
+#     elec_mobility_cm = elec_mobility * 1e4
+#     return elec_mobility_cm
 
 
-def calc_dia_from_mobility(elec_mobility_cm, d_set):
-    def calc_mobility_from_dia1(d_nm):
-        """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
-        q = 1.60217663e-19  # C [1 elementary charge]
-        mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
-        mean_free_path = 65.1  # nm
-        return (
-            elec_mobility_cm
-            - (
-                q
-                * (
-                    1
-                    + 2
-                    * mean_free_path
-                    / d_nm
-                    * (1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path)))
-                )
-            )
-            / (3 * np.pi * mu * d_nm * 1e-9)
-            * 1e4
-        )
+# def calc_dia_from_mobility(elec_mobility_cm, d_set):
+#     def calc_mobility_from_dia1(d_nm):
+#         """Seinfeld and Pandis 2016 (9.50), returns electrical mobility cm^2/(V*s)"""
+#         q = 1.60217663e-19  # C [1 elementary charge]
+#         mu = 1.72e-05  # kg/(m*s) [Dynamic Viscosity]
+#         mean_free_path = 65.1  # nm
+#         return (
+#             elec_mobility_cm
+#             - (
+#                 q
+#                 * (
+#                     1
+#                     + 2
+#                     * mean_free_path
+#                     / d_nm
+#                     * (1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path)))
+#                 )
+#             )
+#             / (3 * np.pi * mu * d_nm * 1e-9)
+#             * 1e4
+#         )
 
-    sol = scipy.optimize.fsolve(calc_mobility_from_dia1, d_set)
-    return sol[0]
+#     sol = scipy.optimize.fsolve(calc_mobility_from_dia1, d_set)
+#     return sol[0]
 
 
-def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm, d_set):
-    elec_mobility_cm = calc_mobility_from_voltage(
-        volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
-    )
-    d_nm = calc_dia_from_mobility(elec_mobility_cm, d_set)
-    return d_nm
+# def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm, d_set):
+#     elec_mobility_cm = calc_mobility_from_voltage(
+#         volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
+#     )
+#     d_nm = mobilitycalc.calc_dia_from_mobility(elec_mobility_cm, d_set)
+#     return d_nm
