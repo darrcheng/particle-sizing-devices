@@ -277,7 +277,7 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     q_c = q_c_ccm  # ccm [Sheath Flowrate]
     q_m = q_c_ccm  # ccm [Excess Flowrate]
     dlnDp = shared_var.dlnDp
-    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) - dlnDp / 2)])
+    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)])
     elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
     a_star = -dlnZp / dlnDp
@@ -286,10 +286,8 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     if d_p < 1.00001:
         d_p = 1.00001
     charge_frac = mobilitycalc.calc_charged_frac(aerosol_charge, d_p)
-    # charge_frac = 1
     cpc_active_eff = 1
     dma_penetration = mobilitycalc.calc_dma_penetration(d_p, l_eff_m, q_a)
-    # dma_penetration = 1
     sample_tube_penetration = 1
     penetrate_eff = dma_penetration * sample_tube_penetration
     dNdlnDp = (N * a_star) / (
