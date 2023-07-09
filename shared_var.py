@@ -23,6 +23,7 @@ voltageCycle = True  # Turn voltage cycling on and off
 low_dia_lim = 1  # Lower Voltage Limit #V will be 100
 high_dia_lim = 2  # Upper Voltage Limit #V will be 8000'
 size_bins = 0  # Number of steps in voltage cycle
+dlnDp = 0  # natural log of difference between steps
 voltage_update_time = 0  # Time between each voltage step
 ljvoltage_set_out = 0  # Labjack output to control HV supply
 voltage_monitor = 1  # Current voltage read from HV supply monitor

@@ -83,14 +83,14 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                 )
             previous_calc_diameter = calculated_dia
             # Invert data
-            if shared_var.blower_runtime > 0 and shared_var.concentration != -9999:
+            if shared_var.flow_read > 0 and shared_var.concentration != -9999:
                 dndlndp = invert_data(
                     shared_var.concentration,
                     calculated_dia,
                     voltage_config["dma_eff_length"],
                     voltage_config["aerosol_charge"],
                     voltage_config["dma_sample_flow"],
-                    shared_var.blower_runtime * 1000,
+                    shared_var.flow_read * 1000,
                 )
             else:
                 dndlndp = 0
@@ -116,6 +116,7 @@ def dataLogging(stop_threads, b, close_barrier, dma, data_config, voltage_config
                         shared_var.curr_count,
                         shared_var.pulse_width,
                         shared_var.pulse_width_error,
+                        dndlndp,
                         shared_var.blower_runtime,
                         shared_var.voltage_runtime,
                         shared_var.voltage_monitor_runtime,
@@ -271,19 +272,15 @@ def create_files(dma, header, cpc_header, file_e):
 def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     """Stolzenburg 2008 (Eqn. 27), returns concentration particle/(cm^3*s)"""
     # Not including CPC activation or sample tube penetration
+    # if d_p < 1.00001:
+    #     d_p = 1.00001
     q_a = q_a_ccm  # ccm [Aerosol Inlet Flowrate]
     q_s = q_a_ccm  # ccm [Aerosol Outlet Flowrate]
     q_c = q_c_ccm  # ccm [Sheath Flowrate]
     q_m = q_c_ccm  # ccm [Excess Flowrate]
-    diameters = np.array([shared_var.low_dia_lim, shared_var.high_dia_lim])
-    elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
-    dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
-    dlnDp = np.log(diameters[1]) - np.log(diameters[0])
-    a_star = -dlnZp / dlnDp
+    a_star = mobilitycalc.calc_a_star(d_p, shared_var.dlnDp)
     beta = (q_s + q_a) / (q_m + q_c)
     delta = (q_s - q_a) / (q_s + q_a)
-    if d_p < 1.00001:
-        d_p = 1.00001
     charge_frac = mobilitycalc.calc_charged_frac(aerosol_charge, d_p)
     cpc_active_eff = 1
     dma_penetration = mobilitycalc.calc_dma_penetration(d_p, l_eff_m, q_a)
@@ -293,6 +290,14 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
         (q_a / q_s) * beta * (1 + delta) * charge_frac * cpc_active_eff * penetrate_eff
     )
     return dNdlnDp
+
+
+# def calc_a_star(d_p, dlnDp):
+#     diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)])
+#     elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
+#     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
+#     a_star = -dlnZp / dlnDp
+#     return a_star
 
 
 # def calc_charged_frac(charge, d_nm):

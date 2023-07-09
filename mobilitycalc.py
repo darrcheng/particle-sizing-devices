@@ -124,3 +124,11 @@ def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm,
     )
     d_nm = calc_dia_from_mobility(elec_mobility_cm, d_set)
     return d_nm
+
+
+def calc_a_star(d_p, dlnDp):
+    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)])
+    elec_mobility = calc_mobility_from_dia(diameters)
+    dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
+    a_star = -dlnZp / dlnDp
+    return a_star

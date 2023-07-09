@@ -147,6 +147,7 @@ def calc_voltages(voltage_config):
         shared_var.size_bins = len(diameters)
         shared_var.low_dia_lim = min(diameters)
         shared_var.high_dia_lim = max(diameters)
+        shared_var.dlnDp = voltage_config["dlnDp"]
 
     # Calculate voltage bins using low/high limits
     else:
@@ -156,6 +157,7 @@ def calc_voltages(voltage_config):
             num=shared_var.size_bins,
             base=np.exp(1),
         )
+        shared_var.dlnDp = np.log(diameters[1]) - np.log(diameters[0])
 
     # Calculate Set Voltages from Diameters
     elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)

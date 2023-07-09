@@ -9,7 +9,7 @@ threads:
   "cpc_serial" : True
   "cpc_fill" : False
 data_config:
-  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","dNdlnDp","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
   "serial_commands": ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]
   "cpc_header" :  ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number","corrected counts","uncorrected counts"] 
   "serial_port": "COM5"
@@ -40,9 +40,10 @@ voltage_set_config:
   "dma_outer_radius" : 1.92659
   "dma_inner_radius" : 0.94266
   "dma_length" : 44.348
-  "dma_eff_length": 13 # [m]
+  "dma_eff_length": 13 # Reineking and Porstendorfer 1986 [m]
   "dma_sample_flow" : 1000 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
+  "dlnDp" : 0.062173 
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
@@ -59,7 +60,7 @@ gui_config:
   "default_mode" : "dia_list"
   "contour_min" : 10
   "contour_max" : 1000
-  "y_min" : 1
+  "y_min" : 8
   "y_max" : 500
   "scan_polarity": "positive"
 pid_config:
