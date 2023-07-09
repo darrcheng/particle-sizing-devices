@@ -75,10 +75,9 @@ def update_time_difference():
     if previous_measurement is not None:
         time_diff = (current_measurement - previous_measurement) / 4000000
         count_diff = current_count - previous_count
-        time_label.config(text="Time difference: {:.2f}".format(time_diff))
         current_rpm = (count_diff / 6) / (time_diff / 60)
-        print("RPM", current_rpm)
-
+        time_label.config(text="Blower RPM: {:.2f}".format(current_rpm))
+        
     previous_count = current_count
     previous_measurement = current_measurement
     window.after(1000, update_time_difference)
