@@ -277,7 +277,7 @@ def invert_data(N, d_p, l_eff_m, aerosol_charge, q_a_ccm, q_c_ccm):
     q_c = q_c_ccm  # ccm [Sheath Flowrate]
     q_m = q_c_ccm  # ccm [Excess Flowrate]
     dlnDp = shared_var.dlnDp
-    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) - dlnDp / 2)])
+    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)])
     elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)
     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
     a_star = -dlnZp / dlnDp
