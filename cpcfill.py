@@ -17,12 +17,21 @@ def cpc_fill(handle, labjack_io, stop_threads, close_barrier):
     # Constants for flow intervals
     curr_time = time.monotonic()
     fill_update_time = 1  # seconds
+    previous_cpc_serial = []
+    serial_good = True
 
     # Infinite Loop
     while not stop_threads.is_set():
+        # Check if CPC serial is running properly
+        if shared_var.cpc_serial_read == previous_cpc_serial:
+            serial_good = False
+        else:
+            previous_cpc_serial = shared_var.cpc_serial_read
+            serial_good = True
+
         try:
             # Check if CPC butanol reservior is not full
-            if shared_var.fill_status == "NOTFULL":
+            if shared_var.fill_status == "NOTFULL" and serial_good == True:
                 # Open valve
                 ljm.eWriteName(handle, labjack_io["fill_valve"], 1)
                 print("Filling")
