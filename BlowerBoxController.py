@@ -386,7 +386,7 @@ norm = colors.LogNorm(vmin=cbar_min, vmax=cbar_max)
 
 # Create a function to update the contourf plot
 def update_contourf(time_data, dp, dndlndp):
-    print(set.size_bins)
+    # print(set.size_bins)
     if set.graph_line:
         try:
             # Check for a new timestep
