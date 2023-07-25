@@ -18,7 +18,7 @@ data_config:
   "serial_parity": "N"
   "serial_timeout": 0.05
   "start_commands" : []
-  "fill_index": 10
+  "fill_index": 0
 labjack : 470024266
 labjack_io :
   "flow_read_input": "AIN0"
