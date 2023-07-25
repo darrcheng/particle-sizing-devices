@@ -31,9 +31,9 @@ labjack_io :
   "flow_set_output": "TDAC2"
   "counter": "DIO18"
   "width": "DIO0"
-  "fill_valve" : "DIO3"
+  "fill_valve" : "DIO6"
 cpc_config:
-  "cpc_flowrate" : 0.6667 # 1200/60 cubic centimeters per second
+  "cpc_flowrate" : 0.7833 # 1200/60 cubic centimeters per second
 voltage_set_config:
   "voltage_set_factor" : 500 # 10000/5 (supply range)/5
   "voltage_offset_calibration" : 0
