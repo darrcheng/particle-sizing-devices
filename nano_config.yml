@@ -37,13 +37,13 @@ cpc_config:
 voltage_set_config:
   "voltage_set_factor" : 500 # 10000/5 (supply range)/5
   "voltage_offset_calibration" : 0
-  "dma_outer_radius" : 1.905
-  "dma_inner_radius" : 0.937
-  "dma_length" : 4.987
-  "dma_eff_length": 1.58 # [m]
+  "dma_outer_radius" : 1.905 # [cm] Jiang 2011
+  "dma_inner_radius" : 0.937 # [cm] Jiang 2011
+  "dma_length" : 4.987 # [cm] Jiang 2011
+  "dma_eff_length": 1.58 # [m] Jiang 2011
   "dma_sample_flow" : 1800 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
-  "dlnDp" : 0.062173 
+  "dlnDp" : 0.1243460
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 3.9
