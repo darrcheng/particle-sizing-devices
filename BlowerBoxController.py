@@ -217,6 +217,30 @@ def onStart():
         target=cpcfill.cpc_fill,
         args=(handle, config["labjack_io"], stop_threads, close_barrier),
     )
+
+    # Wait for the next 10 minute mark
+    # Get the current time
+    current_time = time.localtime()
+    current_minute = current_time.tm_min
+    current_seconds = current_time.tm_sec
+
+    # Calculate the number of minutes remaining until the next 10-minute interval
+    minutes_remaining = (10 - current_minute % 10) % 10
+
+    # Calculate the total time in seconds to sleep until the next interval
+    total_seconds_to_sleep = minutes_remaining * 60 - current_seconds
+    print(total_seconds_to_sleep)
+    if total_seconds_to_sleep < 0:
+        total_seconds_to_sleep = 10 * 60 + total_seconds_to_sleep
+
+    # Print the time when the code will start
+    start_time = time.strftime("%H:%M:%S", time.localtime(time.time() + total_seconds_to_sleep))
+    dma = config["dma"]
+    print(f"{dma} will start at: {start_time}")
+
+    # Wait until the next 10-minute interval
+    time.sleep(total_seconds_to_sleep)
+
     # Start threads
     if thread_config["blower"]:
         blower_thread.start()
