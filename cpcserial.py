@@ -57,8 +57,6 @@ def serial_read(stop_threads, close_barrier, data_config):
             curr_time = curr_time + update_time
             next_time = curr_time + update_time - time.monotonic()
             if next_time < 0:
-                # if abs(next_time) / update_time > 1:
-                #     curr_time = curr_time + update_time * int(abs(next_time) / update_time)
                 next_time = 0
                 print("Slow: CPC Serial Read" + str(datetime.now()))
             time.sleep(next_time)

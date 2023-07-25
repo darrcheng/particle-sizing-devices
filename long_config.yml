@@ -18,7 +18,7 @@ data_config:
   "serial_parity": "N"
   "serial_timeout": 0.05
   "start_commands" : []
-  "fill_index": 10
+  "fill_index": 0
 labjack : 470024266
 labjack_io :
   "flow_read_input": "AIN0"
@@ -37,9 +37,9 @@ cpc_config:
 voltage_set_config:
   "voltage_set_factor" : 2001 #1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
   "voltage_offset_calibration" : 0.00244802921 #0.004585 
-  "dma_outer_radius" : 1.92659
-  "dma_inner_radius" : 0.94266
-  "dma_length" : 44.348
+  "dma_outer_radius" : 1.92659 # Mark's DMAdim sheet
+  "dma_inner_radius" : 0.94266 # Mark's DMAdim sheet
+  "dma_length" : 44.348 # Mark's DMAdim sheet
   "dma_eff_length": 13 # Reineking and Porstendorfer 1986 [m]
   "dma_sample_flow" : 1000 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
