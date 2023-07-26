@@ -229,7 +229,6 @@ def onStart():
 
     # Calculate the total time in seconds to sleep until the next interval
     total_seconds_to_sleep = minutes_remaining * 60 - current_seconds
-    print(total_seconds_to_sleep)
     if total_seconds_to_sleep < 0:
         total_seconds_to_sleep = 10 * 60 + total_seconds_to_sleep
 
