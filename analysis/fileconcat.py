@@ -37,10 +37,18 @@ def add_blank_lines(df, max_gap_minutes):
         # Insert blank rows at the identified indices
         offset_index = 0
         for index in indices:
-            temp_df = pd.DataFrame(0, index=range(1), columns=range(df.shape[1]))
-            temp_df.iloc[0, 0] = df.iloc[index - 1 + offset_index, 0] + pd.Timedelta(minutes=10)
+            temp_df = pd.DataFrame(
+                np.nan, index=range(1), columns=range(df.shape[1])
+            )
+            temp_df.iloc[0, 0] = df.iloc[
+                index - 1 + offset_index, 0
+            ] + pd.Timedelta(minutes=10)
             df = pd.concat(
-                [df.iloc[: index + offset_index, :], temp_df, df.iloc[index + offset_index :, :]],
+                [
+                    df.iloc[: index + offset_index, :],
+                    temp_df,
+                    df.iloc[index + offset_index :, :],
+                ],
                 ignore_index=True,
             )
             offset_index = offset_index + 1

@@ -19,7 +19,7 @@ def calc_charged_frac(charge, d_nm):
 
 
 def calc_slip_correction(d_nm):
-    """Seinfeld and Pandis 2016 (9.34), returns C_c"""
+    """Seinfeld and Pandis 2016 (9.34), returns C_c = [1]"""
     mean_free_path = 65.1  # nm
     slip_correction = 1 + 2 * mean_free_path / d_nm * (
         1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path))
@@ -49,7 +49,9 @@ def calc_deposition_param(d_nm, l_eff_m, q_sample_sccm):
 
 def calc_dma_penetration(d_nm, l_eff_m, q_sample_sccm):
     """Jiang 2011 (Eqn. 9 & 10), returns dma penetration efficiency"""
-    mu = calc_deposition_param(d_nm, l_eff_m, q_sample_sccm)  # 1 [Deposition Parameter]
+    mu = calc_deposition_param(
+        d_nm, l_eff_m, q_sample_sccm
+    )  # 1 [Deposition Parameter]
     if mu > 0.02:
         penetration_eff = (
             0.819 * np.exp(-3.66 * mu)
@@ -58,16 +60,22 @@ def calc_dma_penetration(d_nm, l_eff_m, q_sample_sccm):
             + 0.0154 * np.exp(-107.6 * mu)
         )
     else:
-        penetration_eff = 1.0 - 2.56 * mu ** (2 / 3) + 1.2 * mu + 0.1767 * mu ** (4 / 3)
+        penetration_eff = (
+            1.0 - 2.56 * mu ** (2 / 3) + 1.2 * mu + 0.1767 * mu ** (4 / 3)
+        )
     return penetration_eff
 
 
-def calc_mobility_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm):
+def calc_mobility_from_voltage(
+    volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
+):
     """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
     q_sheath = q_sheath_ccm / 60  # cm^3/s
     q_excess = q_excess_ccm / 60  # cm^3/s
     elec_mobility = (
-        (q_sheath + q_excess) / (4 * np.pi * volt * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
+        (q_sheath + q_excess)
+        / (4 * np.pi * volt * dma_l_cm)
+        * np.log(dma_od_cm / dma_id_cm)
     )
     return elec_mobility
 
@@ -78,7 +86,11 @@ def calc_voltage_from_mobility(
     """Stolzenburg 2008 (Eqn. 1 & 3), returns electrical mobility cm^2/(V*s)"""
     q_sheath = q_sheath_ccm / 60  # cm^3/s
     q_excess = q_excess_ccm / 60  # cm^3/s
-    volt = (q_sheath + q_excess) / (4 * np.pi * mobil_cm * dma_l_cm) * np.log(dma_od_cm / dma_id_cm)
+    volt = (
+        (q_sheath + q_excess)
+        / (4 * np.pi * mobil_cm * dma_l_cm)
+        * np.log(dma_od_cm / dma_id_cm)
+    )
     return volt
 
 
@@ -107,7 +119,10 @@ def calc_dia_from_mobility(elec_mobility_cm, d_set):
                     + 2
                     * mean_free_path
                     / d_nm
-                    * (1.257 + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path)))
+                    * (
+                        1.257
+                        + 0.4 * np.exp((-1.1 * d_nm) / (2 * mean_free_path))
+                    )
                 )
             )
             / (3 * np.pi * mu * d_nm * 1e-9)
@@ -118,7 +133,9 @@ def calc_dia_from_mobility(elec_mobility_cm, d_set):
     return sol[0]
 
 
-def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm, d_set):
+def calc_dia_from_voltage(
+    volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm, d_set
+):
     elec_mobility_cm = calc_mobility_from_voltage(
         volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm, dma_id_cm
     )
@@ -127,7 +144,9 @@ def calc_dia_from_voltage(volt, q_sheath_ccm, q_excess_ccm, dma_l_cm, dma_od_cm,
 
 
 def calc_a_star(d_p, dlnDp):
-    diameters = np.array([np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)])
+    diameters = np.array(
+        [np.exp(np.log(d_p) - dlnDp / 2), np.exp(np.log(d_p) + dlnDp / 2)]
+    )
     elec_mobility = calc_mobility_from_dia(diameters)
     dlnZp = np.log(elec_mobility[1]) - np.log(elec_mobility[0])
     a_star = -dlnZp / dlnDp
