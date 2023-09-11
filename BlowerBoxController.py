@@ -223,7 +223,7 @@ def onStart():
 
     # Wait for the next interval minute mark
     # Get the current time
-    interval = 5
+    interval = config["start_interval"]
     current_time = time.localtime()
     current_minute = current_time.tm_min
     current_seconds = current_time.tm_sec
