@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from matplotlib import dates
-from matplotlib.ticker import LogLocator
+from matplotlib.ticker import LogLocator, LogFormatter
 from matplotlib import dates
 import matplotlib.dates as mdates
 
@@ -61,7 +61,7 @@ def graph_psd(file_date, dma, time_data, data):
         time,
         dp.T,
         conc.T,
-        np.linspace(conc_cbar_min, conc_cbar_max, 500),
+        np.logspace(np.log10(conc_cbar_min), np.log10(conc_cbar_max), 200),
         cmap=cmap,
         norm=norm,
         extend="both",
@@ -74,7 +74,9 @@ def graph_psd(file_date, dma, time_data, data):
     ax1.set_ylim(y_min, y_max)
 
     # Plot colorbar
-    cbar = fig.colorbar(csf, ticks=LogLocator(subs=range(10)))
+    # cbar = fig.colorbar(csf, ticks=LogLocator(subs=range(10)))
+    major_ticks = [10**1, 10**2, 10**3]
+    cbar = format_log_colorbar(fig, csf, major_ticks)
     cbar.ax.set_ylabel("Concentration [$\mathregular{p/cm^3}$]")
 
     ax2 = fig.add_subplot(2, 1, 2)
@@ -89,7 +91,7 @@ def graph_psd(file_date, dma, time_data, data):
         time,
         dp.T,
         dndlog.T,
-        np.linspace(dn_cbar_min, dn_cbar_max, 500),
+        np.logspace(np.log10(dn_cbar_min), np.log10(dn_cbar_max), 200),
         cmap=cmap,
         norm=norm,
         extend="both",
@@ -102,7 +104,12 @@ def graph_psd(file_date, dma, time_data, data):
     ax2.set_ylim(y_min, y_max)
 
     # Plot colorbar
-    cbar = fig.colorbar(csf, ticks=LogLocator(subs=range(10)))
+    # cbar = fig.colorbar(csf, ticks=LogLocator(subs=range(10)))
+    # cbar.ax.set_ylabel("dN/dlogDp [$\mathregular{p/cm^3}$]")
+    # Plot colorbar
+    major_ticks = [10**3, 10**4, 10**5]
+
+    cbar = format_log_colorbar(fig, csf, major_ticks)
     cbar.ax.set_ylabel("dN/dlogDp [$\mathregular{p/cm^3}$]")
 
     return fig
@@ -127,6 +134,7 @@ def graph_merged(file_date, time_data, diameters, dndlndp):
     y_max = 500
     cmap = "jet"
     norm = colors.LogNorm(vmin=dn_cbar_min, vmax=dn_cbar_max)
+    major_ticks = [10**3, 10**4, 10**5]
 
     # Graphing
     fig, ax = plt.subplots(figsize=(12, 5))
@@ -136,7 +144,7 @@ def graph_merged(file_date, time_data, diameters, dndlndp):
         time,
         diameters.T,
         dndlndp.T,
-        np.linspace(dn_cbar_min, dn_cbar_max, 500),
+        np.logspace(np.log10(dn_cbar_min), np.log10(dn_cbar_max), 200),
         cmap=cmap,
         norm=norm,
         extend="both",
@@ -148,7 +156,7 @@ def graph_merged(file_date, time_data, diameters, dndlndp):
     ax.set_ylim(y_min, y_max)
 
     # Plot colorbar
-    cbar = fig.colorbar(csf, ticks=LogLocator(subs=range(10)))
+    cbar = format_log_colorbar(fig, csf, major_ticks)
     cbar.ax.set_ylabel("dN/dlogDp [$\mathregular{p/cm^3}$]")
 
     # Pulled from https://matplotlib.org/3.4.3/gallery/ticks_and_spines/date_concise_formatter.html
@@ -158,3 +166,20 @@ def graph_merged(file_date, time_data, diameters, dndlndp):
     ax.xaxis.set_major_formatter(formatter)
 
     return fig
+
+
+# Set major tick labels in the format `10^3`, `10^4`, etc.
+def format_func(value, tick_number):
+    return r"$10^{{{:d}}}$".format(int(np.log10(value)))
+
+
+def format_log_colorbar(fig, csf, major_ticks):
+    cbar = fig.colorbar(csf, ticks=major_ticks)
+
+    cbar.ax.yaxis.set_major_formatter(plt.FuncFormatter(format_func))
+
+    # Set minor ticks between the decades
+    cbar.ax.yaxis.set_minor_locator(
+        LogLocator(base=10, subs=np.arange(2, 10) * 0.1)
+    )
+    return cbar

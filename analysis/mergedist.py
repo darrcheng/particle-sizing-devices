@@ -144,12 +144,21 @@ def ten_min_round(tm):
     return tm
 
 
+def numpy_to_datetime(dt64):
+    timestamp = (dt64 - np.datetime64("1970-01-01T00:00:00Z")) / np.timedelta64(
+        1, "s"
+    )
+    dt = datetime.utcfromtimestamp(timestamp)
+
+    return dt
+
+
 def find_time_diff(dma_times, start_end):
     if start_end == "start":
-        long_start = dma_times["longdma"][0].tolist()
+        long_start = numpy_to_datetime(dma_times["longdma"][0])
         long_start = ten_min_round(long_start)
 
-        nano_start = dma_times["nanodma"][0].tolist()
+        nano_start = numpy_to_datetime(dma_times["nanodma"][0])
         nano_start = ten_min_round(nano_start)
 
         if nano_start == long_start:
@@ -163,10 +172,10 @@ def find_time_diff(dma_times, start_end):
             add_time = "nanodma"
 
     elif start_end == "end":
-        long_end = dma_times["longdma"][-1].tolist()
+        long_end = numpy_to_datetime(dma_times["longdma"][-1])
         long_end = ten_min_round(long_end)
 
-        nano_end = dma_times["nanodma"][-1].tolist()
+        nano_end = numpy_to_datetime(dma_times["nanodma"][-1])
         nano_end = ten_min_round(nano_end)
 
         if nano_end == long_end:
@@ -186,11 +195,11 @@ def add_timestamps(dma_times, ref_time, add_time, start_end):
     added_lines = 0
 
     if start_end == "start":
-        long_start = dma_times[add_time][0].astype(datetime)
+        long_start = numpy_to_datetime(dma_times[add_time][0])
 
         while ref_time < long_start:
             # Convert the first timestamp to a Python datetime object
-            first_timestamp = dma_times[add_time][0].astype(datetime)
+            first_timestamp = numpy_to_datetime(dma_times[add_time][0])
 
             # Calculate 10 minutes before the first timestamp
             new_timestamp = first_timestamp - timedelta(minutes=10)
@@ -209,10 +218,10 @@ def add_timestamps(dma_times, ref_time, add_time, start_end):
             added_lines += 1
 
     if start_end == "end":
-        long_end = dma_times[add_time][-1].astype(datetime)
+        long_end = numpy_to_datetime(dma_times[add_time][-1])
         while long_end < ref_time:
             # Convert the last timestamp to a Python datetime object
-            last_timestamp = dma_times[add_time][-1].astype(datetime)
+            last_timestamp = numpy_to_datetime(dma_times[add_time][-1])
 
             # Calculate 10 minutes after the last timestamp
             new_timestamp = last_timestamp + timedelta(minutes=10)
