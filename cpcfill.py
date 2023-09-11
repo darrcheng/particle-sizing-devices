@@ -34,9 +34,9 @@ def cpc_fill(handle, labjack_io, stop_threads, close_barrier):
             if shared_var.fill_status == "NOTFULL" and serial_good == True:
                 # Open valve
                 ljm.eWriteName(handle, labjack_io["fill_valve"], 1)
-                print("Filling")
+                print(str(datetime.now()) + ": Filling")
                 # Pause
-                time.sleep(0.25)
+                time.sleep(0.5)
 
                 # Close valve
                 ljm.eWriteName(handle, labjack_io["fill_valve"], 0)
