@@ -41,7 +41,7 @@ voltage_set_config:
   "dma_inner_radius" : 0.937 # [cm] Jiang 2011
   "dma_length" : 4.987 # [cm] Jiang 2011
   "dma_eff_length": 1.58 # [m] Jiang 2011
-  "dma_sample_flow" : 1800 #[sccm]
+  "dma_sample_flow" : 2000 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
   "dlnDp" : 0.1243460
 sensor_config:
@@ -55,7 +55,7 @@ gui_config:
   "high_dia_lim" : 35  
   "bins" : 50  # Number of steps in voltage cycle
   "voltage_update_time" : 20000  # Time between each voltage step
-  "blower_flow_set" : 18 # LPM
+  "blower_flow_set" : 20 # LPM
   "diameter_list" : [1.00001,1.300,1.472,1.667,1.888,2.138,2.421,2.741,3.104,3.515,3.981,4.508,5.105,5.781,6.546,7.413,8.394,9.506,10.764,12.190,13.804,15.631,17.701,20.045,22.699,25.705,29.108,32.962,37.327,42.269]
   "default_mode" : "dia_list"
   "contour_min" : 10
