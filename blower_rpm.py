@@ -1,37 +1,3 @@
-# import u3
-
-# # Open the LabJack U3
-# d = u3.U3()
-
-# # Enable the timers and counters, set FI0 for 4 analog ins = 1111 , none for EIO
-# d.configIO(
-#     NumberOfTimersEnabled=1, EnableCounter1=1, TimerCounterPinOffset=4, FIOAnalog=15, EIOAnalog=0
-# )
-# # Set the configuration for the first timer:
-# t0Config = u3.TimerConfig(0, TimerMode=10, Value=0)
-
-# d.getFeedback(
-#     t0Config,
-# )
-# d.configTimerClock(TimerClockBase=None, TimerClockDivisor=None)
-# counter = u3.Counter(1)
-# timer = u3.Timer(0)
-# startMeasures = d.getFeedback(timer, counter)
-# startTime = startMeasures[0]
-# print(startMeasures)
-
-# import time
-
-# time.sleep(1)
-
-# startMeasures = d.getFeedback(timer, counter)
-# time_diff = (startMeasures[0] - startTime) / 4000000
-# print(startMeasures)
-# print(time_diff)
-
-# d.close()
-
-
 import u3
 import time
 import tkinter as tk
@@ -41,7 +7,11 @@ d = u3.U3()
 
 # Enable the timers and counters, set FI0 for 4 analog ins = 1111, none for EIO
 d.configIO(
-    NumberOfTimersEnabled=1, EnableCounter1=1, TimerCounterPinOffset=4, FIOAnalog=15, EIOAnalog=0
+    NumberOfTimersEnabled=1,
+    EnableCounter1=1,
+    TimerCounterPinOffset=4,
+    FIOAnalog=15,
+    EIOAnalog=0,
 )
 # Set the configuration for the first timer:
 t0Config = u3.TimerConfig(0, TimerMode=10, Value=0)
@@ -77,7 +47,7 @@ def update_time_difference():
         count_diff = current_count - previous_count
         current_rpm = (count_diff / 6) / (time_diff / 60)
         time_label.config(text="Blower RPM: {:.2f}".format(current_rpm))
-        
+
     previous_count = current_count
     previous_measurement = current_measurement
     window.after(1000, update_time_difference)
