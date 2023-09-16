@@ -125,7 +125,10 @@ def onStart():
     global pid
     pid_config = config["pid_config"]
     pid = PID(
-        pid_config["pidp"], pid_config["pidi"], pid_config["pidd"], setpoint=set.blower_flow_set
+        pid_config["pidp"],
+        pid_config["pidi"],
+        pid_config["pidd"],
+        setpoint=set.blower_flow_set,
     )
     pid.output_limits = (-0.25, 0.25)
 
@@ -218,22 +221,25 @@ def onStart():
         args=(handle, config["labjack_io"], stop_threads, close_barrier),
     )
 
-    # Wait for the next 10 minute mark
+    # Wait for the next interval minute mark
     # Get the current time
+    interval = config["start_interval"]
     current_time = time.localtime()
     current_minute = current_time.tm_min
     current_seconds = current_time.tm_sec
 
     # Calculate the number of minutes remaining until the next 10-minute interval
-    minutes_remaining = (10 - current_minute % 10) % 10
+    minutes_remaining = (interval - current_minute % interval) % interval
 
     # Calculate the total time in seconds to sleep until the next interval
     total_seconds_to_sleep = minutes_remaining * 60 - current_seconds
     if total_seconds_to_sleep < 0:
-        total_seconds_to_sleep = 10 * 60 + total_seconds_to_sleep
+        total_seconds_to_sleep = interval * 60 + total_seconds_to_sleep
 
     # Print the time when the code will start
-    start_time = time.strftime("%H:%M:%S", time.localtime(time.time() + total_seconds_to_sleep))
+    start_time = time.strftime(
+        "%H:%M:%S", time.localtime(time.time() + total_seconds_to_sleep)
+    )
     dma = config["dma"]
     print(f"{dma} will start at: {start_time}")
 
@@ -308,9 +314,9 @@ gui_settings.grid(row=0, column=0)
 # Create the TKinter widgets that allow for manual DMA Blower settings
 
 # Heading
-tk.Label(gui_settings, text=config["dma"], font=("TkDefaultFont", 12, "bold")).grid(
-    row=0, column=0, columnspan=3
-)
+tk.Label(
+    gui_settings, text=config["dma"], font=("TkDefaultFont", 12, "bold")
+).grid(row=0, column=0, columnspan=3)
 
 # Set Point Values Title
 setpoint_title = tk.Label(
@@ -318,19 +324,25 @@ setpoint_title = tk.Label(
 ).grid(row=1, column=0, columnspan=3)
 
 # Lower Voltage Limit
-dia_list_label = tk.Label(gui_settings, text="Diameter List (nm)").grid(row=2, column=0)
+dia_list_label = tk.Label(gui_settings, text="Diameter List (nm)").grid(
+    row=2, column=0
+)
 dia_list_e = tk.Entry(gui_settings)
 dia_list_e.insert(0, gui_config["diameter_list"])
 dia_list_e.grid(row=2, column=1)
 
 # Lower Voltage Limit
-lvl_label = tk.Label(gui_settings, text="Lower Diameter Limit (nm)").grid(row=3, column=0)
+lvl_label = tk.Label(gui_settings, text="Lower Diameter Limit (nm)").grid(
+    row=3, column=0
+)
 lvl_e = tk.Entry(gui_settings)
 lvl_e.insert(0, gui_config["low_dia_lim"])
 lvl_e.grid(row=3, column=1)
 
 # Upper Voltage Limit
-uvl_label = tk.Label(gui_settings, text="Upper Diameter Limit (nm)").grid(row=4, column=0)
+uvl_label = tk.Label(gui_settings, text="Upper Diameter Limit (nm)").grid(
+    row=4, column=0
+)
 uvl_e = tk.Entry(gui_settings)
 uvl_e.insert(0, gui_config["high_dia_lim"])
 uvl_e.grid(row=4, column=1)
@@ -342,52 +354,62 @@ bins_e.insert(0, gui_config["bins"])
 bins_e.grid(row=5, column=1)
 
 # Voltage Update
-voltageUpdate_label = tk.Label(gui_settings, text="Interval Update Time (ms)").grid(row=6, column=0)
+voltageUpdate_label = tk.Label(
+    gui_settings, text="Interval Update Time (ms)"
+).grid(row=6, column=0)
 voltageUpdate_e = tk.Entry(gui_settings)
 voltageUpdate_e.insert(0, gui_config["voltage_update_time"])
 voltageUpdate_e.grid(row=6, column=1)
 
 # Blower Flow Rate
-blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(row=7, column=0)
+blowerFlow_label = tk.Label(gui_settings, text="Blower Flow Rate (L/min)").grid(
+    row=7, column=0
+)
 blowerFlow_e = tk.Entry(gui_settings)
 blowerFlow_e.insert(0, gui_config["blower_flow_set"])
 blowerFlow_e.grid(row=7, column=1)
 
 # File Location
-data_storage_label = tk.Label(gui_settings, text="Data Storage (File Location)").grid(
-    row=8, column=0, columnspan=3
-)
+data_storage_label = tk.Label(
+    gui_settings, text="Data Storage (File Location)"
+).grid(row=8, column=0, columnspan=3)
 file_e = tk.Entry(gui_settings, width=70)
 file_e.grid(row=9, column=0, columnspan=3)
 
 # Scan Mode
 dia_option = tk.StringVar()
 dia_option.set(gui_config["default_mode"])
-ttk.Radiobutton(gui_settings, text="Diameter List", variable=dia_option, value="dia_list").grid(
-    row=2, column=2
-)
-ttk.Radiobutton(gui_settings, text="Scan Interval", variable=dia_option, value="interval").grid(
-    row=3, column=2
-)
+ttk.Radiobutton(
+    gui_settings, text="Diameter List", variable=dia_option, value="dia_list"
+).grid(row=2, column=2)
+ttk.Radiobutton(
+    gui_settings, text="Scan Interval", variable=dia_option, value="interval"
+).grid(row=3, column=2)
 
 # Scan Polarity
 polarity_option = tk.StringVar()
 polarity_option.set(gui_config["scan_polarity"])
-ttk.Radiobutton(gui_settings, text="Positive", variable=polarity_option, value="positive").grid(
-    row=4, column=2
-)
-ttk.Radiobutton(gui_settings, text="Negative", variable=polarity_option, value="negative").grid(
-    row=5, column=2
-)
+ttk.Radiobutton(
+    gui_settings, text="Positive", variable=polarity_option, value="positive"
+).grid(row=4, column=2)
+ttk.Radiobutton(
+    gui_settings, text="Negative", variable=polarity_option, value="negative"
+).grid(row=5, column=2)
 
 
 # Voltage Cycle Button
-voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(row=6, column=2)
-voltageCycle_b = tk.Button(gui_settings, text="On", command=voltageCycle_callback)
+voltageCycle_label = tk.Label(gui_settings, text="Voltage Cycle").grid(
+    row=6, column=2
+)
+voltageCycle_b = tk.Button(
+    gui_settings, text="On", command=voltageCycle_callback
+)
 voltageCycle_b.grid(row=7, column=2)
 
 # Start Button
-start_b = tk.Button(gui_settings, text="Run", background="PaleGreen2", command=onStart)
+start_b = tk.Button(
+    gui_settings, text="Run", background="PaleGreen2", command=onStart
+)
 start_b.grid(row=10, column=0, columnspan=3)
 
 ############# Graph
@@ -416,7 +438,9 @@ def update_contourf(time_data, dp, dndlndp):
             if time_data[-1] != np.datetime64(set.graph_line[0][0]):
                 if True:
                     # Check if diameters are strictly increasing
-                    time_data = np.append(time_data, np.datetime64(set.graph_line[0][0]))
+                    time_data = np.append(
+                        time_data, np.datetime64(set.graph_line[0][0])
+                    )
 
                     # Add new diameters to graph data
                     dp = np.vstack((dp, set.graph_line[0][2:]))
@@ -448,7 +472,9 @@ def update_contourf(time_data, dp, dndlndp):
                         )
                         ax.set_yscale("log")
                         ax.set_ylim(gui_config["y_min"], gui_config["y_max"])
-                        ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+                        ax.xaxis.set_major_formatter(
+                            dates.DateFormatter("%H:%M")
+                        )
                         ax.set_ylabel(r"Diameter [nm]", fontsize=10)
 
         except IndexError:
@@ -456,7 +482,9 @@ def update_contourf(time_data, dp, dndlndp):
             if True:
                 # Add time data
                 dt_array = np.empty(0, dtype="datetime64")
-                time_data = np.append(dt_array, np.datetime64(set.graph_line[0][0]))
+                time_data = np.append(
+                    dt_array, np.datetime64(set.graph_line[0][0])
+                )
 
                 # Add diameter data
                 dp = np.asarray(set.graph_line[0][2:])
@@ -494,17 +522,21 @@ flow_monitor.grid(row=1)
 conc_monitor = tk.Frame(monitor)
 conc_monitor.grid(row=2)
 
-tk.Label(dma_monitor, text="DMA Size Selection", font=("TkDefaultFont", 9, "bold")).grid(
-    row=0, column=0, columnspan=2
-)
+tk.Label(
+    dma_monitor, text="DMA Size Selection", font=("TkDefaultFont", 9, "bold")
+).grid(row=0, column=0, columnspan=2)
 
 # Current Set Voltage
-voltageSetPoint_label = tk.Label(dma_monitor, text="Set Voltage").grid(row=1, column=0)
+voltageSetPoint_label = tk.Label(dma_monitor, text="Set Voltage").grid(
+    row=1, column=0
+)
 voltageSetPoint_e = tk.Entry(dma_monitor)
 voltageSetPoint_e.grid(row=1, column=1)
 
 # Current Monitor Voltage
-supplyVoltage_label = tk.Label(dma_monitor, text="Supply Voltage").grid(row=2, column=0)
+supplyVoltage_label = tk.Label(dma_monitor, text="Supply Voltage").grid(
+    row=2, column=0
+)
 supplyVoltage_e = tk.Entry(dma_monitor)
 supplyVoltage_e.grid(row=2, column=1)
 
@@ -513,9 +545,9 @@ dia_label = tk.Label(dma_monitor, text="Diameter (nm)").grid(row=3, column=0)
 dia_e = tk.Entry(dma_monitor)
 dia_e.grid(row=3, column=1)
 
-tk.Label(flow_monitor, text="DMA Flow Parameters", font=("TkDefaultFont", 9, "bold")).grid(
-    row=0, column=0, columnspan=2
-)
+tk.Label(
+    flow_monitor, text="DMA Flow Parameters", font=("TkDefaultFont", 9, "bold")
+).grid(row=0, column=0, columnspan=2)
 
 # Define flow rate label
 flow_label = tk.Label(flow_monitor, text="Flow sLPM").grid(row=1, column=0)
@@ -523,12 +555,16 @@ flow_e = tk.Entry(flow_monitor)
 flow_e.grid(row=1, column=1)
 
 # Define current temperature label
-temp_label = tk.Label(flow_monitor, text="Temperature (C)").grid(row=2, column=0)
+temp_label = tk.Label(flow_monitor, text="Temperature (C)").grid(
+    row=2, column=0
+)
 temp_e = tk.Entry(flow_monitor)
 temp_e.grid(row=2, column=1)
 
 # Define current RH label
-rh_label = tk.Label(flow_monitor, text="Relative Humidity").grid(row=3, column=0)
+rh_label = tk.Label(flow_monitor, text="Relative Humidity").grid(
+    row=3, column=0
+)
 rh_e = tk.Entry(flow_monitor)
 rh_e.grid(row=3, column=1)
 
@@ -537,12 +573,14 @@ p_label = tk.Label(flow_monitor, text="Pressure").grid(row=4, column=0)
 p_e = tk.Entry(flow_monitor)
 p_e.grid(row=4, column=1)
 
-tk.Label(conc_monitor, text="CPC Pulse Counting", font=("TkDefaultFont", 9, "bold")).grid(
-    row=0, column=0, columnspan=2
-)
+tk.Label(
+    conc_monitor, text="CPC Pulse Counting", font=("TkDefaultFont", 9, "bold")
+).grid(row=0, column=0, columnspan=2)
 
 # Define cpc count label
-conc_label = tk.Label(conc_monitor, text="Concentration #/cc").grid(row=1, column=0)
+conc_label = tk.Label(conc_monitor, text="Concentration #/cc").grid(
+    row=1, column=0
+)
 conc_e = tk.Entry(conc_monitor)
 conc_e.grid(row=1, column=1)
 
