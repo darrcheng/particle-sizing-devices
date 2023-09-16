@@ -3,44 +3,54 @@ import os
 import matplotlib.pyplot as plt
 import traceback
 
-import fileconcat
-import psdgraph
-import inversioncorrect
-import mergedist
+from analysisfnc import *
 
-# file_dates = ["2023-08-08"]
-file_dates = [
-    "2023-09-10",
-    "2023-09-11",
-]
+# Set analysis dates
+dates = list(daterange.daterange("2023-09-12", "2023-09-15"))
+
 dma_list = ["longdma", "nanodma"]
 
+######## Scan Settings ##########
+# scan_time = 10
+# # Bins of overlap region, first column is 1 (Start - 09/11/23)
+# overlap_bins = {
+#     "nano_lo": 26,
+#     "nano_hi": 30,
+#     "long_lo": 18,
+#     "long_hi": 26,
+# }
+# Bins of overlap region, first column is 1 (09/11/23 - Present)
+scan_time = 5
+overlap_bins = {
+    "nano_lo": 27,
+    "nano_hi": 30,
+    "long_lo": 7,
+    "long_hi": 10,
+}
 
-for file_date in file_dates:
+for date in dates:
     dma_times = {}
     dma_dists = {}
-    print("File Date:", file_date)
+    print("File Date:", date)
     for dma in dma_list:
         try:
             # dma = "longdma"
-            folder_path = "C:\\Users\\d95st\\Box Sync\\Jen Lab Data Archive\\SMPS\\"  # Replace with the actual folder path
+            folder_path = f"C:\\Users\\d95st\\Box Sync\\Jen Lab Data Archive\\SMPS\\{date}"
 
             # List of CSV files to import
-            file_list = glob.glob(
-                folder_path + file_date + "\\" + dma + "_invert*.csv"
-            )  # Replace with the pattern matching your CSV files
+            file_list = glob.glob(folder_path + "\\" + dma + "_invert*.csv")
 
             # Import CSV files into a DataFrame
             dataframe = fileconcat.import_csv_to_dataframe(file_list)
 
-            # Add blank lines where the gap in timestamps is more than 11 minutes
-            dataframe = fileconcat.add_blank_lines(dataframe, 15)
+            # Add blank lines where the gap in timestamps is more than 150% scan time
+            dataframe = fileconcat.add_blank_lines(dataframe, scan_time * 1.5)
 
-            # Save the resulting DataFrame
+            # Save daily marged dataframe
             subfolder_path = os.path.join(os.getcwd(), "data")
             os.makedirs(subfolder_path, exist_ok=True)
             dataframe.to_csv(
-                "data\\" + dma + "_" + file_date + ".csv",
+                "data\\" + dma + "_" + date + ".csv",
                 index=False,
                 header=False,
             )
@@ -56,7 +66,7 @@ for file_date in file_dates:
                 dma, time_data, data
             )
             export.to_csv(
-                "data\\" + dma + "_" + file_date + "_corrected.csv",
+                "data\\" + dma + "_" + date + "_corrected.csv",
                 index=False,
                 header=False,
             )
@@ -66,10 +76,10 @@ for file_date in file_dates:
             dma_dists[dma] = data
 
             # Graph particle size distribution
-            plot = psdgraph.graph_psd(file_date, dma, time_data, data)
+            plot = psdgraph.graph_psd(date, dma, time_data, data)
 
             # Save Graph
-            plt.savefig("data\\" + dma + "_" + file_date + ".png", dpi=300)
+            plt.savefig("data\\" + dma + "_" + date + ".png", dpi=300)
 
             print("Finshed: Plot Save")
 
@@ -85,17 +95,17 @@ for file_date in file_dates:
     try:
         # Merge long column and nano size distributions
         export, diameters, dndlndp, time = mergedist.combine_smps(
-            dma_times, dma_dists
+            dma_times, dma_dists, overlap_bins
         )
-
+        # Save merged PSD size distribution
         export.to_csv(
-            "data\\SMPS_" + file_date + ".csv",
+            "data\\SMPS_" + date + ".csv",
             index=False,
             header=False,
         )
-
-        psdgraph.graph_merged(file_date, time, diameters, dndlndp)
-        plt.savefig("data\\SMPS_" + file_date + ".png", dpi=300)
+        # Contour graph of size distribution
+        psdgraph.graph_merged(date, time, diameters, dndlndp)
+        plt.savefig("data\\SMPS_" + date + ".png", dpi=300)
     except Exception as e:
         print(e)
         print(traceback.format_exc())

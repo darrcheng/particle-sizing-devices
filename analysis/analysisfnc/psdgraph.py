@@ -14,7 +14,7 @@ def graph_psd(file_date, dma, time_data, data):
 
     # Graph settings for long vs nano DMA
     if dma == "longdma":
-        x = 60
+        # num_bins = 60
         conc_cbar_min = 10
         conc_cbar_max = 1050
         dn_cbar_min = 1000
@@ -22,7 +22,7 @@ def graph_psd(file_date, dma, time_data, data):
         y_min = 8
         y_max = 500
     elif dma == "nanodma":
-        x = 30
+        # num_bins = 30
         conc_cbar_min = 10
         conc_cbar_max = 1050
         dn_cbar_min = 1000
@@ -30,10 +30,11 @@ def graph_psd(file_date, dma, time_data, data):
         y_min = 1
         y_max = 50
 
-    # Split data into diameter, concentration, dndlogdp
-    dp = data[:, 1:x]
-    conc = data[:, x + 1 : 2 * x]
-    dndlog = data[:, 2 * x + 1 : 3 * x]
+    # Split data into diameter, concentration, dndlogdp, skip first bin (reset bin)
+    num_bins = int(data.shape[1] / 3)
+    dp = data[:, 1:num_bins]
+    conc = data[:, num_bins + 1 : 2 * num_bins]
+    dndlog = data[:, 2 * num_bins + 1 : 3 * num_bins]
 
     # Set 0's to nan's
     conc[conc == 0] = np.nan

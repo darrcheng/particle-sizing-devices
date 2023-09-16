@@ -76,12 +76,12 @@ def overlap_averaging(nano_avg_dndlndp, long_avg_dndlndp, overlap_dia):
     return overlap_dndlndp
 
 
-def merge_smps(long_data, nano_data):
+def merge_smps(long_data, nano_data, overlap_bins):
     # Constants for bin numbers going from bins 25 nm to 42 nm
-    nano_lo = 26
-    nano_hi = 30
-    long_lo = 18
-    long_hi = 26
+    nano_lo = overlap_bins["nano_lo"]
+    nano_hi = overlap_bins["nano_hi"]
+    long_lo = overlap_bins["long_lo"]
+    long_hi = overlap_bins["long_hi"]
 
     # Pull out diameters and dndlndp
     nano_tot_cols = nano_data.shape[1]
@@ -100,10 +100,12 @@ def merge_smps(long_data, nano_data):
     long_avg_dia = long_diameters[:, long_lo - 1 : long_hi]
     long_avg_dndlndp = long_dndlndp[:, long_lo - 1 : long_hi]
 
-    # Interpolate nanoSMPS size distribution
-    nano_avg_dia, nano_avg_dndlndp = interpolate_size_dist(
-        nano_avg_dia, nano_avg_dndlndp
-    )
+    # Check if nano distribution needs to be interpolated
+    if ((long_avg_dia.shape[1] + 1) / nano_avg_dia.shape[1]) == 2:
+        # Interpolate nanoSMPS size distribution
+        nano_avg_dia, nano_avg_dndlndp = interpolate_size_dist(
+            nano_avg_dia, nano_avg_dndlndp
+        )
 
     # Use nanoSMPS as diameter bins unless there's no data except nan's
     overlap_dia = nano_avg_dia
@@ -280,25 +282,31 @@ def align_smps_dist(dma_times, dma_dists):
     return dma_times, dma_dists
 
 
-def combine_smps(dma_times, dma_dists):
+def combine_smps(dma_times, dma_dists, overlap_bins):
+    # If both nano and long column data is present, merge cells
     if len(dma_times) == 2:
         # Align nano and long column distributions
         dma_times, dma_dists = align_smps_dist(dma_times, dma_dists)
 
         # Merge SMPS Distributions
         diameters, dndlndp = merge_smps(
-            dma_dists["longdma"], dma_dists["nanodma"]
+            dma_dists["longdma"], dma_dists["nanodma"], overlap_bins
         )
         time = dma_times["nanodma"]
+
+    # Otherwise just use long or nano data
     elif "nanodma" in dma_times.keys():
-        diameters = dma_dists["nanodma"][:, 0:30]
-        dndlndp = dma_dists["nanodma"][:, 60:90]
+        num_bins = int(dma_dists["nanodma"].shape[1] / 3)
+        diameters = dma_dists["nanodma"][:, 0:num_bins]
+        dndlndp = dma_dists["nanodma"][:, num_bins * 2 : num_bins * 3]
         time = dma_times["nanodma"]
     else:
-        diameters = dma_dists["longdma"][:, 0:60]
-        dndlndp = dma_dists["longdma"][:, 120:180]
+        num_bins = int(dma_dists["longdma"].shape[1] / 3)
+        diameters = dma_dists["longdma"][:, 0:num_bins]
+        dndlndp = dma_dists["longdma"][:, num_bins * 2 : num_bins * 3]
         time = dma_times["longdma"]
 
+    # Combine arrays and return as a pandas dataframe
     data = np.concatenate((diameters, dndlndp), axis=1)
     time_export = pd.DataFrame(time)
     data_export = pd.DataFrame(data)
