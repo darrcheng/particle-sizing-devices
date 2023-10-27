@@ -6,7 +6,7 @@ import traceback
 from analysisfnc import *
 
 # Set analysis dates
-dates = list(daterange.daterange("2023-09-12", "2023-09-15"))
+dates = list(daterange.daterange("2023-10-14", "2023-10-14"))
 
 dma_list = ["longdma", "nanodma"]
 
@@ -50,7 +50,7 @@ for date in dates:
             subfolder_path = os.path.join(os.getcwd(), "data")
             os.makedirs(subfolder_path, exist_ok=True)
             dataframe.to_csv(
-                "data\\" + dma + "_" + date + ".csv",
+                "psd_data\\" + dma + "_" + date + ".csv",
                 index=False,
                 header=False,
             )
@@ -66,7 +66,7 @@ for date in dates:
                 dma, time_data, data
             )
             export.to_csv(
-                "data\\" + dma + "_" + date + "_corrected.csv",
+                "psd_data\\" + dma + "_" + date + "_corrected.csv",
                 index=False,
                 header=False,
             )
@@ -79,7 +79,7 @@ for date in dates:
             plot = psdgraph.graph_psd(date, dma, time_data, data)
 
             # Save Graph
-            plt.savefig("data\\" + dma + "_" + date + ".png", dpi=300)
+            plt.savefig("psd_data\\" + dma + "_" + date + ".png", dpi=300)
 
             print("Finshed: Plot Save")
 
@@ -99,13 +99,13 @@ for date in dates:
         )
         # Save merged PSD size distribution
         export.to_csv(
-            "data\\SMPS_" + date + ".csv",
+            "psd_data\\SMPS_" + date + ".csv",
             index=False,
             header=False,
         )
         # Contour graph of size distribution
         psdgraph.graph_merged(date, time, diameters, dndlndp)
-        plt.savefig("data\\SMPS_" + date + ".png", dpi=300)
+        plt.savefig("psd_data\\SMPS_" + date + ".png", dpi=300)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
