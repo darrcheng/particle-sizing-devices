@@ -139,9 +139,9 @@ def ten_min_round(tm):
     # tm = long_start.tolist()
 
     # Round to closest 10 minute mark
-    tm += timedelta(minutes=5)
+    tm += timedelta(minutes=2.5)
     tm -= timedelta(
-        minutes=tm.minute % 10, seconds=tm.second, microseconds=tm.microsecond
+        minutes=tm.minute % 5, seconds=tm.second, microseconds=tm.microsecond
     )
     return tm
 
@@ -204,7 +204,7 @@ def add_timestamps(dma_times, ref_time, add_time, start_end):
             first_timestamp = numpy_to_datetime(dma_times[add_time][0])
 
             # Calculate 10 minutes before the first timestamp
-            new_timestamp = first_timestamp - timedelta(minutes=10)
+            new_timestamp = first_timestamp - timedelta(minutes=5)
 
             # Convert the new timestamp back to numpy datetime64 format
             new_timestamp_np = np.datetime64(new_timestamp)
@@ -226,7 +226,7 @@ def add_timestamps(dma_times, ref_time, add_time, start_end):
             last_timestamp = numpy_to_datetime(dma_times[add_time][-1])
 
             # Calculate 10 minutes after the last timestamp
-            new_timestamp = last_timestamp + timedelta(minutes=10)
+            new_timestamp = last_timestamp + timedelta(minutes=5)
 
             # Convert the new timestamp back to numpy datetime64 format
             new_timestamp_np = np.datetime64(new_timestamp)
@@ -279,6 +279,7 @@ def align_smps_dist(dma_times, dma_dists):
         dma_dists = add_blank_datalines(
             dma_times, dma_dists, add_time, added_lines
         )
+
     return dma_times, dma_dists
 
 

@@ -42,7 +42,7 @@ def add_blank_lines(df, max_gap_minutes):
             )
             temp_df.iloc[0, 0] = df.iloc[
                 index - 1 + offset_index, 0
-            ] + pd.Timedelta(minutes=10)
+            ] + pd.Timedelta(minutes=max_gap_minutes)
             df = pd.concat(
                 [
                     df.iloc[: index + offset_index, :],
