@@ -161,6 +161,7 @@ def correct_sampling_losses(dma, diameters, dndlndp):
             + 1
             + 1
         )  # inlet length [in]
+        l_in = l_in + 6  # Neutralizer Length
     elif dma == "longdma":
         q_lpm = 1  # sampling flow [LPM]
         l_in = (
@@ -173,6 +174,7 @@ def correct_sampling_losses(dma, diameters, dndlndp):
             + 1
             + 1
         )  # inlet length [in]
+        l_in = l_in + 6  # Neutralizer Length
 
     # Convert units
     q_si = q_lpm * 1e-3 / 60  # sampling flow [m^3/s]
