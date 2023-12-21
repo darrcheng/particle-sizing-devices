@@ -5,8 +5,11 @@ import traceback
 
 from analysisfnc import *
 
+# Data Directory
+data_dir = r"C:\Users\d95st\PhD Files\Data\Pittsburgh 23"
+
 # Set analysis dates
-dates = list(daterange.daterange("2023-10-14", "2023-10-14"))
+dates = list(daterange.daterange("2023-09-28", "2023-09-30"))
 
 dma_list = ["longdma", "nanodma"]
 
@@ -35,10 +38,12 @@ for date in dates:
     for dma in dma_list:
         try:
             # dma = "longdma"
-            folder_path = f"C:\\Users\\d95st\\Box Sync\\Jen Lab Data Archive\\SMPS\\{date}"
+            folder_path = f"\Raw Data\PSD\{date}"
 
             # List of CSV files to import
-            file_list = glob.glob(folder_path + "\\" + dma + "_invert*.csv")
+            file_list = glob.glob(
+                data_dir + folder_path + "\\" + dma + "_invert*.csv"
+            )
 
             # Import CSV files into a DataFrame
             dataframe = fileconcat.import_csv_to_dataframe(file_list)
@@ -66,7 +71,7 @@ for date in dates:
                 dma, time_data, data
             )
             export.to_csv(
-                "psd_data\\" + dma + "_" + date + "_corrected.csv",
+                f"{data_dir}\Processed Data\PSD\\{dma}_{date}_corrected.csv",
                 index=False,
                 header=False,
             )
@@ -79,7 +84,7 @@ for date in dates:
             plot = psdgraph.graph_psd(date, dma, time_data, data)
 
             # Save Graph
-            plt.savefig("psd_data\\" + dma + "_" + date + ".png", dpi=300)
+            plt.savefig(f"{data_dir}\Graphs\PSD\\{dma}_{date}.png", dpi=300)
 
             print("Finshed: Plot Save")
 
@@ -99,13 +104,13 @@ for date in dates:
         )
         # Save merged PSD size distribution
         export.to_csv(
-            "psd_data\\SMPS_" + date + ".csv",
+            f"{data_dir}\Processed Data\PSD\\SMPS_{date}.csv",
             index=False,
             header=False,
         )
         # Contour graph of size distribution
         psdgraph.graph_merged(date, time, diameters, dndlndp)
-        plt.savefig("psd_data\\SMPS_" + date + ".png", dpi=300)
+        plt.savefig(f"{data_dir}\Graphs\PSD\\SMPS_{date}.png", dpi=300)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
