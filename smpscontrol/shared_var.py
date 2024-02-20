@@ -1,9 +1,6 @@
 ####################Default Variable Settings####################
 # General Settings
-# file = "C:\\Users\\d95st\\Blower_Box\\trialrun.csv"  # File Name
 stopThreads = False  # Bool to help close program
-# timer = 0
-# dma = "nanodma"
 
 # Flow Settings
 pidp = 0.2  # PID Proportional Gain
@@ -31,7 +28,6 @@ set_diameter = 0
 dia_list = []
 diameter_mode = ""
 scan_polarity = ""
-# voltage_set_scaling = 10000 / 5  # Scaling for HV Supply
 
 # CPC Variables
 curr_count = 0
@@ -40,7 +36,6 @@ concentration_nodead = 0
 pulse_width = 0
 pulse_width_error = 0
 fill_status = ""
-# cpc_flowrate = 300 / 60  # cubic centimeters per second
 
 # Runtime
 blower_runtime = 0
@@ -55,23 +50,3 @@ graph_line = []
 
 # CPC Serial
 cpc_serial_read = []
-# # # Labjack Inputs
-# flow_read_input = "AIN0"
-# voltage_monitor_input = "AIN1"
-# press_input = "AIN2"
-# temp_input = "AIN3"
-# rh_input = "AIN4"
-# voltage_set_ouput = "DAC0"
-# flow_set_output = "TDAC0"
-
-# labjack_io = {
-#     "flow_read_input": "AIN0",
-#     "voltage_monitor_input": "AIN1",
-#     "press_input": "AIN2",
-#     "temp_input": "AIN3",
-#     "rh_input": "AIN4",
-#     "voltage_set_output": "DAC0",
-#     "flow_set_output": "TDAC2",
-#     "counter": "DIO18",
-#     "width": "DIO0",
-# }
