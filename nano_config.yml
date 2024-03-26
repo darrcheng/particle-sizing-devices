@@ -1,0 +1,78 @@
+---
+dma: "nanodma"
+start_interval: 5
+threads:
+  "blower" : True
+  "voltage_scan" : True
+  "voltage_monitor" : True
+  "datalogging" : True
+  "cpc_counting" : True
+  "cpc_serial" : True
+  "cpc_fill" : True
+keys:
+  "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
+  "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
+  "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","pulse width error","concentration no-deadtime","cpc count runtime"]
+  "cpc_serial" :  ['cpc serial thread time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level',"serial runtime"]
+data_config:
+  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","dNdlnDp","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "serial_commands": ['RD','R1','R2','R3','R4','R5','R6','R7','RE','RB','R0']
+  "cpc_header" :  ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
+  "serial_port": "COM7"
+  "serial_baud": 9600
+  "serial_bytesize": 7
+  "serial_parity": "E"
+  "serial_timeout": 0.05
+  "start_commands" : ['TS440','TO460']
+  "fill_index": 10
+labjack : 470024288
+labjack_io :
+  "flow_read_input": "AIN0"
+  "voltage_monitor_input": "AIN1"
+  "press_input": "AIN2"
+  "temp_input": "AIN3"
+  "rh_input": "AIN4"
+  "voltage_set_output_pos": "TDAC4"
+  "voltage_set_output_neg": "TDAC5"
+  "flow_set_output": "TDAC2"
+  "counter": "DIO18"
+  "width": "DIO0"
+  "fill_valve" : "DIO6"
+cpc_config:
+  "cpc_flowrate" : 0.7833 # 1200/60 cubic centimeters per second
+voltage_set_config:
+  "voltage_set_factor" : 500 # 10000/5 (supply range)/5
+  "voltage_offset_calibration" : 0
+  "dma_outer_radius" : 1.905 # [cm] Jiang 2011
+  "dma_inner_radius" : 0.937 # [cm] Jiang 2011
+  "dma_length" : 4.987 # [cm] Jiang 2011
+  "dma_eff_length": 1.58 # [m] Jiang 2011
+  "dma_sample_flow" : 2000 #[sccm]
+  "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
+  "dlnDp" : 0.1243460
+  "dlnDp" : 0.114195
+sensor_config:
+  "temp_factor" : 0.01
+  "flow_factor" : 3.9
+  "flow_offset" : 0.7043
+  "voltage_factor" : 500
+  "voltage_offset" : 0
+gui_config:
+  "low_dia_lim" : 1
+  "high_dia_lim" : 35  
+  "bins" : 50  # Number of steps in voltage cycle
+  "voltage_update_time" : 10000  # Time between each voltage step
+  "blower_flow_set" : 20 # LPM
+  "diameter_list_old" : [1.00001,1.300,1.472,1.667,1.888,2.138,2.421,2.741,3.104,3.515,3.981,4.508,5.105,5.781,6.546,7.413,8.394,9.506,10.764,12.190,13.804,15.631,17.701,20.045,22.699,25.705,29.108,32.962,37.327,42.269]
+  "diameter_list" : [1.00001,1.3,1.457,1.634,1.831,2.053,2.301,2.579,2.891,3.241,3.633,4.073,4.565,5.118,5.737,6.431,7.209,8.081,9.058,10.154,11.382,12.759,14.303,16.033,17.973,20.147,22.584,25.316,28.379,31.812]
+  "default_mode" : "dia_list"
+  "contour_min" : 10
+  "contour_max" : 1000
+  "y_min" : 1
+  "y_max" : 50
+  "scan_polarity": "positive"
+pid_config:
+  "pidp" : 0.2
+  "pidi" : 0 #0.1
+  "pidd" : 0
