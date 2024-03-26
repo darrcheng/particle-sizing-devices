@@ -5,7 +5,6 @@ import sys
 import threading
 import time
 import traceback
-import random
 
 from labjack import ljm
 
@@ -260,7 +259,7 @@ class VoltageControl:
 
                 volt_data = {
                     "volt monitor thread time": datetime.now(),
-                    "supply_volt": random.random(),
+                    "supply_volt": voltage_monitor,
                     "volt monitor runtime": voltage_monitor_runtime,
                 }
                 self.voltmon_queue.put(volt_data)

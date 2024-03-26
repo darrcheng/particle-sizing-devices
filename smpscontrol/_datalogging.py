@@ -33,9 +33,9 @@ class DataLogging:
         return self.graph_line
 
     def data_logging(self):
-        # print("yes")
         dma = self.config["dma"]
         data_config = self.config["data_config"]
+        key_config = self.config["keys"]
         voltage_config = self.config["voltage_set_config"]
         dlndp = self.config["voltage_set_config"]["dlnDp"]
 
@@ -43,7 +43,7 @@ class DataLogging:
         start_time, csv_filepath, csv_filepath2 = create_files(
             dma,
             data_config["header"],
-            data_config["cpc_header"],
+            key_config["blower"]+key_config["voltage_scan"]+key_config["voltage_monitor"]+key_config['cpc_counting']+ key_config["cpc_serial"],
             self.file_dir_e,
         )
         log_elapsed = 0
@@ -79,18 +79,16 @@ class DataLogging:
                 count += 1
                 log_elapsed = time.monotonic() - start
 
-                print("datalogging wait")
                 self.datalog_barrier.wait()
 
                 # Get variables
                 try:
                     self.set_dia = self.all_data["voltset"]["dia set"]
                     self.concentration = self.all_data["count"]["concentration"]
-                    self.voltage_monitor = self.all_data["voltset"][
-                        "supply_volt"
-                    ]
+                    self.voltage_monitor = self.all_data["voltmon"]["supply_volt"]
                     self.flow_read = self.all_data["blower"]["flow"]
-                except:
+                except Exception as e:
+                    print(e)
                     self.set_dia = np.nan
                     self.concentration = np.nan
                     self.voltage_monitor = np.nan
@@ -98,7 +96,6 @@ class DataLogging:
 
                 # Calculate Diameter
                 self.calculate_diameter_from_montior(voltage_config)
-
                 # Invert data
                 if self.flow_read > 0 and self.concentration != -9999:
                     self.dndlndp = invert_data(
@@ -135,7 +132,7 @@ class DataLogging:
                     data_writer.writerow(all_values)
 
                 # If this is the first scan, set time
-                if self.scan_time:
+                if not self.scan_time:
                     self.scan_time.append(datetime.now())
 
                 # If set diameter is the same, append data to list
@@ -149,16 +146,19 @@ class DataLogging:
                     self.prev_set_dia = self.set_dia
 
                 # If set dia is smaller, that indicates a new scan
-                else:
+                elif abs(self.set_dia) < self.prev_set_dia:
                     self.average_diameter_repeats()
                     list_scan_data = self.write_averaged_csv(csv_filepath2)
-                    self.graph_line = list_scan_data
+                    self.graph_line = list_scan_data.insert(0, self.scan_time)
 
                     # Re-initalize
                     self.scan_time = [datetime.now()]
                     self.reset_and_append_diameter_repeat()
                     self.prev_set_dia = self.set_dia
 
+                else:
+                    pass
+                
                 # else:
                 #     # First loop
                 #     self.scan["dia"].append(datetime.now())
@@ -166,7 +166,6 @@ class DataLogging:
                 #     previous_diameter = shared_var.set_diameter
 
                 self.datalog_barrier.clear()
-                print("barrier reset")
 
                 # Schedule the next update
                 curr_time = curr_time + update_time
@@ -223,9 +222,10 @@ class DataLogging:
         """Write averaged data to CSV file
         Format: [scan_time, avg_dia, avg_conc, avg_dndlndp]"""
         # Flatten scan data dictionary to list for CSV export
-        list_scan_data = [self.scan[key] for key in self.scan]
+        list_scan_data = [self.scan[value] for value in self.scan]
         flat_scan_data = [item for sublist in self.scan for item in sublist]
-
+        print(f"List scan data {list_scan_data}")
+        print(f"Flast scan data {flat_scan_data}")
         # Write line to file
         with open(csv_filepath2, mode="a", newline="") as data_file:
             data_writer = csv.writer(data_file, delimiter=",")

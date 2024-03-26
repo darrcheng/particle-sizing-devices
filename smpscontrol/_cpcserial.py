@@ -74,15 +74,16 @@ class CPCSerial:
                 self.fill_queue.put(responses[data_config["fill_index"]])
 
                 # Calculate runtime
-                serial_runtime = time.monotonic() - curr_time - update_time
+                serial_runtime = time.monotonic() - curr_time - update_time 
 
                 # Create dictionary of serial data
-                serial_data = dict(zip(data_config["serial_keys"], responses))
-                serial_data = {
-                    "cpc serial thread time": datetime.now(),
-                    **serial_data,
-                    "serial runtime": serial_runtime,
-                }
+                responses = [datetime.now()] + responses + [serial_runtime]
+                serial_data = dict(zip(self.config["keys"]["cpc_serial"], responses))
+                # serial_data = {
+                #     "cpc serial thread time": datetime.now(),
+                #     **serial_data,
+                #     "serial runtime": serial_runtime,
+                # }
                 self.serial_queue.put(serial_data)
 
                 # Schedule the next update

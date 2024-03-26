@@ -39,7 +39,7 @@ class SMPS:
         if len(sys.argv) > 1:
             self.config_file = sys.argv[1]
         else:
-            self.config_file = "..\\test_config.yml"
+            self.config_file = "..\\long_config.yml"
 
         # Load config file
         self.program_path = os.path.dirname(os.path.realpath(__file__))
@@ -579,19 +579,19 @@ class SMPS:
         if graph_line:
             try:
                 # Check for a new timestep
-                if time_data[-1] != np.datetime64(graph_line[0][0]):
+                if time_data[-1] != np.datetime64(graph_line[0]):
                     if True:
                         # Check if diameters are strictly increasing
                         time_data = np.append(
                             time_data,
-                            np.datetime64(graph_line[0][0]),
+                            np.datetime64(graph_line[0]),
                         )
 
                         # Add new diameters to graph data
-                        dp = np.vstack((dp, graph_line[0][2:]))
+                        dp = np.vstack((dp, graph_line[1][1:]))
 
                         # Add new data to graph data
-                        dndlndp = np.vstack((dndlndp, graph_line[1][1:]))
+                        dndlndp = np.vstack((dndlndp, graph_line[2][1:]))
 
                         # Scroll the graph
                         if time_data.shape > (144,):
@@ -630,14 +630,14 @@ class SMPS:
                     # Add time data
                     dt_array = np.empty(0, dtype="datetime64")
                     time_data = np.append(
-                        dt_array, np.datetime64(graph_line[0][0])
+                        dt_array, np.datetime64(graph_line[0])
                     )
 
                     # Add diameter data
-                    dp = np.asarray(graph_line[0][2:])
+                    dp = np.asarray(graph_line[1][1:])
 
                     # Add concentration data
-                    dndlndp = np.asarray(graph_line[1][1:])
+                    dndlndp = np.asarray(graph_line[2][1:])
                 print(sys.exc_info()[0])
                 print(sys.exc_info()[1])
 

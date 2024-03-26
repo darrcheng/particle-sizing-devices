@@ -3,7 +3,6 @@ import sys
 import threading
 import time
 import traceback
-import random
 
 from labjack import ljm
 
@@ -88,7 +87,7 @@ class BlowerControl:
                 # Add results into dictionary
                 blower_data = {
                     "blower thread time": datetime.now(),
-                    "temp": random.random(),
+                    "temp": temp_read,
                     "rh": rh_read,
                     "press": press_read,
                     "flow": flow_read,
