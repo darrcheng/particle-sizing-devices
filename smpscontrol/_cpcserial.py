@@ -79,7 +79,7 @@ class CPCSerial:
                 # Create dictionary of serial data
                 serial_data = dict(zip(data_config["serial_keys"], responses))
                 serial_data = {
-                    "datetime": datetime.now(),
+                    "cpc serial thread time": datetime.now(),
                     **serial_data,
                     "serial runtime": serial_runtime,
                 }
