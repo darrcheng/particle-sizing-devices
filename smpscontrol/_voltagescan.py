@@ -1,15 +1,17 @@
-from labjack import ljm
-import time
-from datetime import datetime  # Pulls current time from system
+from datetime import datetime
 import numpy as np
-import shared_var as shared_var
 import sensors
 import sys
 import threading
+import time
 import traceback
 import random
 
+from labjack import ljm
+
 import mobilitycalc
+
+# import shared_var as shared_var
 
 
 class VoltageControl:
@@ -191,20 +193,20 @@ class VoltageControl:
         # Calculate scan details from diameter list
         if gui_config["default_mode"] == "dia_list":
             diameters = np.array(gui_config["diameter_list"], dtype=float)
-            shared_var.size_bins = len(diameters)
-            shared_var.low_dia_lim = min(diameters)
-            shared_var.high_dia_lim = max(diameters)
-            shared_var.dlnDp = voltage_config["dlnDp"]
+            # shared_var.size_bins = len(diameters)
+            # shared_var.low_dia_lim = min(diameters)
+            # shared_var.high_dia_lim = max(diameters)
+            # shared_var.dlnDp = voltage_config["dlnDp"]
 
         # Calculate voltage bins using low/high limits
         else:
             diameters = np.logspace(
-                np.log(shared_var.low_dia_lim),
-                np.log(shared_var.high_dia_lim),
-                num=shared_var.size_bins,
+                np.log(gui_config["low_dia_lim"]),
+                np.log(gui_config["high_dia_lim"]),
+                num=gui_config["bins"],
                 base=np.exp(1),
             )
-            shared_var.dlnDp = np.log(diameters[1]) - np.log(diameters[0])
+            # shared_var.dlnDp = np.log(diameters[1]) - np.log(diameters[0])
 
         # Calculate Set Voltages from Diameters
         elec_mobility = mobilitycalc.calc_mobility_from_dia(diameters)

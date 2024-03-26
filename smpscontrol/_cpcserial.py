@@ -1,75 +1,103 @@
 import time
 from datetime import datetime  # Pulls current time from system
 import shared_var as shared_var
+import threading
 import traceback
 import serial
 
 
-# Define Voltage Monitor
-def serial_read(self):
-    data_config = self.config["data_config"]
+class CPCSerial:
+    def __init__(
+        self, config, stop_threads, close_barrier, serial_queue, fill_queue
+    ):
+        self.config = config
+        self.stop_threads = stop_threads
+        self.close_barrier = close_barrier
+        self.serial_queue = serial_queue
+        self.fill_queue = fill_queue
 
-    # Constants for cpc serial intervals
-    curr_time = time.monotonic()
-    update_time = 1  # seconds
+        self.thread = threading.Thread(target=self.serial_read)
 
-    # Set up the serial port
-    ser = serial.Serial(
-        port=data_config["serial_port"],
-        baudrate=data_config["serial_baud"],
-        bytesize=data_config["serial_bytesize"],
-        parity=data_config["serial_parity"],
-        timeout=data_config["serial_timeout"],
-    )
-    ser.flushInput()
+    def start(self):
+        self.thread.start()
 
-    # Send startup commands
-    if data_config["start_commands"]:
-        for start_command in data_config["start_commands"]:
-            ser.write((start_command + "\r").encode())
-            ser.readline().decode().rstrip()
+    # Define Voltage Monitor
+    def serial_read(self):
+        data_config = self.config["data_config"]
 
-    # Send commands and record responses
-    commands = data_config["serial_commands"]
+        # Constants for cpc serial intervals
+        curr_time = time.monotonic()
+        update_time = 1  # seconds
 
-    while not self.stop_threads.is_set():
-        try:
-            # Store responses in a list
-            responses = []
+        # Set up the serial port
+        ser = serial.Serial(
+            port=data_config["serial_port"],
+            baudrate=data_config["serial_baud"],
+            bytesize=data_config["serial_bytesize"],
+            parity=data_config["serial_parity"],
+            timeout=data_config["serial_timeout"],
+        )
+        ser.flushInput()
 
-            for command in commands:
-                # Send command to serial port
-                ser.write((command + "\r").encode())
+        # Send startup commands
+        if data_config["start_commands"]:
+            for start_command in data_config["start_commands"]:
+                ser.write((start_command + "\r").encode())
+                ser.readline().decode().rstrip()
 
-                # Read response from serial port
-                response = ser.readline().decode().rstrip()
-                response = response.split(",")
+        # Send commands and record responses
+        commands = data_config["serial_commands"]
 
-                # Append response to the list
-                responses.extend(response)
+        while not self.stop_threads.is_set():
+            try:
+                # Store responses in a list
+                responses = []
 
-            # Share CPC data with other threads
-            shared_var.cpc_serial_read = [datetime.now()] + responses
-            shared_var.fill_status = responses[data_config["fill_index"]]
+                for command in commands:
+                    # Send command to serial port
+                    ser.write((command + "\r").encode())
 
-            # Calculate runtime
-            shared_var.serial_runtime = (
-                time.monotonic() - curr_time - update_time
-            )
+                    # Read response from serial port
+                    response = ser.readline().decode().rstrip()
+                    response = response.split(",")
 
-            # Schedule the next update
-            curr_time = curr_time + update_time
-            next_time = curr_time + update_time - time.monotonic()
-            if next_time < 0:
-                next_time = 0
-                print("Slow: CPC Serial Read" + str(datetime.now()))
-            time.sleep(next_time)
+                    # Append response to the list
+                    responses.extend(response)
 
-        except BaseException as e:
-            print("CPC Serial Read Error")
-            print(traceback.format_exc())
-            break
+                # # Share CPC data with other threads
+                # shared_var.cpc_serial_read = [datetime.now()] + responses
+                # shared_var.fill_status = responses[data_config["fill_index"]]
 
-    print("Shutdown: CPC Serial Read")
-    ser.close()
-    self.close_barrier.wait()
+                # Update fill status queue
+                if self.fill_queue.full():
+                    self.fill_queue.get_nowait()
+                self.fill_queue.put(responses[data_config["fill_index"]])
+
+                # Calculate runtime
+                serial_runtime = time.monotonic() - curr_time - update_time
+
+                # Create dictionary of serial data
+                serial_data = dict(zip(data_config["serial_keys"], responses))
+                serial_data = {
+                    "datetime": datetime.now(),
+                    **serial_data,
+                    "serial runtime": serial_runtime,
+                }
+                self.serial_queue.put(serial_data)
+
+                # Schedule the next update
+                curr_time = curr_time + update_time
+                next_time = curr_time + update_time - time.monotonic()
+                if next_time < 0:
+                    next_time = 0
+                    print("Slow: CPC Serial Read" + str(datetime.now()))
+                time.sleep(next_time)
+
+            except BaseException as e:
+                print("CPC Serial Read Error")
+                print(traceback.format_exc())
+                break
+
+        print("Shutdown: CPC Serial Read")
+        ser.close()
+        self.close_barrier.wait()

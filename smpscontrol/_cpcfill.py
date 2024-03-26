@@ -1,62 +1,78 @@
-from labjack import ljm
-import time
-import sys
-import traceback
 from datetime import datetime
+import sys
+import threading
+import time
+import traceback
 
-import sensors
-import shared_var
+from labjack import ljm
+
+# import sensors
+# import shared_var
 
 
-def cpc_fill(self):
-    """Opens fill valve for 0.25 s when CPC reads NOTFULL"""
-    labjack_io = self.config["labjack_io"]
+class CPCFill:
+    def __init__(self, handle, config, stop_threads, close_barrier, fill_queue):
+        self.handle = handle
+        self.config = config
+        self.stop_threads = stop_threads
+        self.close_barrier = close_barrier
+        self.fill_queue = fill_queue
 
-    # Close valve
-    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
+        self.thread = threading.Thread(target=self.cpc_fill)
 
-    # Constants for flow intervals
-    curr_time = time.monotonic()
-    fill_update_time = 1  # seconds
-    previous_cpc_serial = []
-    serial_good = True
+    def start(self):
+        self.thread.start()
 
-    # Infinite Loop
-    while not self.stop_threads.is_set():
-        # Check if CPC serial is running properly
-        if shared_var.cpc_serial_read == previous_cpc_serial:
-            serial_good = False
-        else:
-            previous_cpc_serial = shared_var.cpc_serial_read
-            serial_good = True
+    def cpc_fill(self):
+        """Opens fill valve for 0.25 s when CPC reads NOTFULL"""
+        labjack_io = self.config["labjack_io"]
 
-        try:
-            # Check if CPC butanol reservior is not full
-            if shared_var.fill_status == "NOTFULL" and serial_good == True:
-                # Open valve
-                ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)
-                print(str(datetime.now()) + ": Filling")
-                # Pause
-                time.sleep(0.5)
+        # Close valve
+        ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
 
-                # Close valve
-                ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
+        # Constants for flow intervals
+        curr_time = time.monotonic()
+        fill_update_time = 1  # seconds
+        previous_cpc_serial = []
+        serial_good = True
 
-            # Schedule the next update
-            curr_time = curr_time + fill_update_time
-            next_time = curr_time + fill_update_time - time.monotonic()
-            if next_time < 0:
-                next_time = 0
-            time.sleep(next_time)
+        # Infinite Loop
+        while not self.stop_threads.is_set():
+            # # Check if CPC serial is running properly
+            # if shared_var.cpc_serial_read == previous_cpc_serial:
+            #     serial_good = False
+            # else:
+            #     previous_cpc_serial = shared_var.cpc_serial_read
+            #     serial_good = True
 
-        except ljm.LJMError:
-            ljme = sys.exc_info()[1]
-            print("CPC Fill Valve: " + str(ljme) + str(datetime.now()))
-            time.sleep(1)
+            try:
+                # Check if CPC butanol reservior is not full
+                fill_status = self.fill_queue.get_nowait()
+                if fill_status == "NOTFULL":
+                    # Open valve
+                    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)
+                    print(str(datetime.now()) + ": Filling")
+                    # Pause
+                    time.sleep(0.5)
 
-        except BaseException as e:
-            print("CPC Fill Valve Error")
-            print(traceback.format_exc())
-            break
-    print("Shutdown: CPC Fill Valve")
-    self.close_barrier.wait()
+                    # Close valve
+                    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
+
+                # Schedule the next update
+                curr_time = curr_time + fill_update_time
+                next_time = curr_time + fill_update_time - time.monotonic()
+                if next_time < 0:
+                    next_time = 0
+                time.sleep(next_time)
+
+            except ljm.LJMError:
+                ljme = sys.exc_info()[1]
+                print("CPC Fill Valve: " + str(ljme) + str(datetime.now()))
+                time.sleep(1)
+
+            except BaseException as e:
+                print("CPC Fill Valve Error")
+                print(traceback.format_exc())
+                break
+        print("Shutdown: CPC Fill Valve")
+        self.close_barrier.wait()

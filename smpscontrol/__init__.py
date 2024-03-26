@@ -23,15 +23,18 @@ from _blowercontrol import BlowerControl
 from _voltagescan import VoltageControl
 from _datalogging import DataLogging
 from _cpccounting import CPCCount
-from _cpcserial import serial_read
-from _cpcfill import cpc_fill
+
+from _cpcserial import CPCSerial
+
+from _cpcfill import CPCFill
 from _datatest import DataTest
-import shared_var as set
+
+# import shared_var as shared_var
 
 
 class SMPS:
     def __init__(self, root):
-        ##### Load config file
+        ##### Inital Program Setup ############################################
         # Allow config file to be passed from .bat file or directly from code
         if len(sys.argv) > 1:
             self.config_file = sys.argv[1]
@@ -59,7 +62,7 @@ class SMPS:
         self.all_data = {}
         self.file_dir = None
 
-        ##### Threading related initalizations
+        ##### Threading related initalizations ################################
         # Create threading events to control on/off
         self.stop_threads = threading.Event()
         self.voltage_scan = threading.Event()
@@ -67,20 +70,23 @@ class SMPS:
         self.voltmon_queue = queue.Queue()
         self.voltset_queue = queue.Queue()
         self.count_queue = queue.Queue()
+        self.serial_queue = queue.Queue()
+        self.fill_queue = queue.Queue(maxsize=5)
 
         # Create barriers for thread control
-        thread_config = self.config["threads"]
+        self.thread_config = self.config["threads"]
         num_data_threads = (
-            thread_config["voltage_scan"] + thread_config["datalogging"]
+            self.thread_config["voltage_scan"]
+            + self.thread_config["datalogging"]
         )
         num_threads = (
-            thread_config["blower"]
-            + thread_config["voltage_scan"]
-            + thread_config["voltage_monitor"]
-            + thread_config["datalogging"]
-            + thread_config["cpc_counting"]
-            + thread_config["cpc_serial"]
-            + thread_config["cpc_fill"]
+            self.thread_config["blower"]
+            + self.thread_config["voltage_scan"]
+            + self.thread_config["voltage_monitor"]
+            + self.thread_config["datalogging"]
+            + self.thread_config["cpc_counting"]
+            + self.thread_config["cpc_serial"]
+            + self.thread_config["cpc_fill"]
         )
         self.datalog_barrier = threading.Event()
         self.close_barrier = threading.Barrier(num_threads + 1)
@@ -110,6 +116,20 @@ class SMPS:
             self.close_barrier,
             self.count_queue,
         )
+        self.cpc_serial = CPCSerial(
+            self.config,
+            self.stop_threads,
+            self.close_barrier,
+            self.serial_queue,
+            self.fill_queue,
+        )
+        self.cpc_fill = CPCFill(
+            self.handle,
+            self.config,
+            self.stop_threads,
+            self.close_barrier,
+            self.fill_queue,
+        )
         self.data_test = DataTest(self.all_data)
 
         # Data Queue Dict Keys
@@ -118,8 +138,9 @@ class SMPS:
         self.voltset_keys = key_config["voltage_scan"]
         self.voltmon_keys = key_config["voltage_monitor"]
         self.count_keys = key_config["cpc_counting"]
+        self.serial_keys = key_config["cpc_serial"]
 
-        ####################Tkinter GUI ####################
+        ##### GUI Setup ########################################################
         ##### SMPS Settings Input #####
         self.set_frame = tk.Frame(root)
         self.set_frame.grid(row=0, column=0)
@@ -350,7 +371,7 @@ class SMPS:
         self.canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
         self.canvas.get_tk_widget().pack()
 
-    ####################Main Program Functions####################
+    ##### Main Program Functions ##############################################
     def onStart(self):
         # Reconfigure Start Button to Stop Button
         self.start_b.configure(text="Stop", command=self.onClose)
@@ -377,84 +398,23 @@ class SMPS:
             pid_config["pidp"],
             pid_config["pidi"],
             pid_config["pidd"],
-            setpoint=set.blower_flow_set,
+            setpoint=self.config["gui_config"]["blower_flow_set"],
         )
         pid.output_limits = (-0.25, 0.25)
 
-        # Set Variables
-        # global control
-        # global labjackVoltage
-        # global start_time
-        # start_time = datetime.now()
-
-        # Define threads
-
-        # self.blower_thread = threading.Thread(
-        #     name="Blower Monitoring",
-        #     target=self.blower_control.blower,
-        #     args=(pid,),
-        # )
-        self.blower_control.set_pid(pid)
-        self.blower_control.start()
-        self.voltage_control.start_voltscan()
-        self.voltage_control.start_voltmon()
-        self.cpc_count.start()
-        # self.voltage_scan_thread = threading.Thread(
-        #     name="High Voltage",
-        #     target=self.voltage_control.set_dma_voltage,
-        #     args=(),
-        # )
-        # self.voltage_monitor_thread = threading.Thread(
-        #     name="Voltage Monitor",
-        #     target=self.voltage_control.read_voltage_monitor,
-        #     args=(),
-        # )
-
-        # global cpc_counting_thread
-        # cpc_counting_thread = threading.Thread(
-        #     name="CPC Counting",
-        #     target=self.cpc_count.cpc_conc,
-        #     args=(),
-        # )
-        global cpc_serial_thread
-        cpc_serial_thread = threading.Thread(
-            name="Serial Read",
-            target=serial_read,
-            args=(),
-        )
-        global cpc_fill_thread
-        cpc_fill_thread = threading.Thread(
-            name="CPC Fill",
-            target=cpc_fill,
-            args=(),
-        )
-
-        ##### Wait for the next interval minute mark
-        # self.pause_for_even_time()
-
-        # Mapping of config keys to thread objects
-        self.thread_mapping = {
-            # "blower": self.blower_thread,
-            # "voltage_scan": self.voltage_scan_thread,
-            # "voltage_monitor": self.voltage_monitor_thread,
-            # "datalogging": self.data_logging_thread,
-            # "cpc_counting": cpc_counting_thread,
-            "cpc_serial": cpc_serial_thread,
-            "cpc_fill": cpc_fill_thread,
-        }
-
-        # Start Threads
-        thread_config = self.config["threads"]
-        for key, thread in self.thread_mapping.items():
-            if thread_config.get(key):
-                thread.start()
-
-        # Start GUI update and graphing
-        self.curr_time = False
-        self.read_thread_data()
-        print("y")
-        self.update_contourf(np.array([]), np.array([]), np.array([]))
-        self.update_gui()
+        if self.thread_config["blower"]:
+            self.blower_control.set_pid(pid)
+            self.blower_control.start()
+        if self.thread_config["voltage_scan"]:
+            self.voltage_control.start_voltscan()
+        if self.thread_config["voltage_monitor"]:
+            self.voltage_control.start_voltmon()
+        if self.thread_config["cpc_counting"]:
+            self.cpc_count.start()
+        if self.thread_config["cpc_serial"]:
+            self.cpc_serial.start()
+        if self.thread_config["cpc_fill"]:
+            self.cpc_fill.start()
 
         self.data_logging = DataLogging(
             self.config,
@@ -472,6 +432,12 @@ class SMPS:
         )
 
         self.data_logging_thread.start()
+
+        # Start GUI update and graphing
+        self.curr_time = False
+        self.read_thread_data()
+        self.update_contourf(np.array([]), np.array([]), np.array([]))
+        self.update_gui()
 
     def pause_for_even_time(self):
         """Pauses program until an even time interval is reached
@@ -539,10 +505,15 @@ class SMPS:
                 self.count_data = self.count_queue.get_nowait()
             except queue.Empty:
                 self.count_data = dict.fromkeys(self.count_keys, np.nan)
+            try:
+                self.serial_data = self.serial_queue.get_nowait()
+            except queue.Empty:
+                self.serial_data = dict.fromkeys(self.serial_keys, np.nan)
             self.all_data["blower"] = self.blower_data
             self.all_data["voltset"] = self.voltset_data
             self.all_data["voltmon"] = self.voltmon_data
             self.all_data["count"] = self.count_data
+            self.all_data["serial"] = self.serial_data
             # print(self.all_data)
             self.datalog_barrier.set()
         except Exception:
@@ -604,21 +575,23 @@ class SMPS:
         cbar_max = gui_config["contour_max"]
         cmap = "jet"
         norm = colors.LogNorm(vmin=cbar_min, vmax=cbar_max)
-        if set.graph_line:
+        graph_line = self.data_logging.share_graph_data()
+        if graph_line:
             try:
                 # Check for a new timestep
-                if time_data[-1] != np.datetime64(set.graph_line[0][0]):
+                if time_data[-1] != np.datetime64(graph_line[0][0]):
                     if True:
                         # Check if diameters are strictly increasing
                         time_data = np.append(
-                            time_data, np.datetime64(set.graph_line[0][0])
+                            time_data,
+                            np.datetime64(graph_line[0][0]),
                         )
 
                         # Add new diameters to graph data
-                        dp = np.vstack((dp, set.graph_line[0][2:]))
+                        dp = np.vstack((dp, graph_line[0][2:]))
 
                         # Add new data to graph data
-                        dndlndp = np.vstack((dndlndp, set.graph_line[1][1:]))
+                        dndlndp = np.vstack((dndlndp, graph_line[1][1:]))
 
                         # Scroll the graph
                         if time_data.shape > (144,):
@@ -627,7 +600,7 @@ class SMPS:
                             dndlndp = np.delete(dndlndp, 0, 0)
 
                         # Create meshgrid for time
-                        y = np.arange(0, set.size_bins - 1)
+                        y = np.arange(0, len(graph_line) - 1)
                         time1, y = np.meshgrid(time_data, y)
 
                         # Plot contour if there's more than one row of data
@@ -657,14 +630,14 @@ class SMPS:
                     # Add time data
                     dt_array = np.empty(0, dtype="datetime64")
                     time_data = np.append(
-                        dt_array, np.datetime64(set.graph_line[0][0])
+                        dt_array, np.datetime64(graph_line[0][0])
                     )
 
                     # Add diameter data
-                    dp = np.asarray(set.graph_line[0][2:])
+                    dp = np.asarray(graph_line[0][2:])
 
                     # Add concentration data
-                    dndlndp = np.asarray(set.graph_line[1][1:])
+                    dndlndp = np.asarray(graph_line[1][1:])
                 print(sys.exc_info()[0])
                 print(sys.exc_info()[1])
 

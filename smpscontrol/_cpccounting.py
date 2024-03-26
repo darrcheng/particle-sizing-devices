@@ -1,11 +1,12 @@
-import labjack.ljm as ljm
-import time
+from datetime import datetime
+import sys
 import threading
+import time
+import traceback
+
+import labjack.ljm as ljm
 
 # import shared_var
-import sys
-from datetime import datetime
-import traceback
 
 
 class CPCCount:
@@ -84,7 +85,6 @@ class CPCCount:
                 count = ljm.eReadName(
                     self.handle, labjack_io["counter"] + "_EF_READ_A"
                 )
-                # print("y")
                 curr_count = count - prev_count
 
                 # Calculate the elapsed time since the last count

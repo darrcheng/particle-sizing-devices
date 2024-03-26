@@ -1,10 +1,11 @@
-from labjack import ljm
-import time
-import sys
-import traceback
 from datetime import datetime
-import random
+import sys
 import threading
+import time
+import traceback
+import random
+
+from labjack import ljm
 
 import sensors
 
