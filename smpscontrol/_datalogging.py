@@ -43,7 +43,11 @@ class DataLogging:
         start_time, csv_filepath, csv_filepath2 = create_files(
             dma,
             data_config["header"],
-            key_config["blower"]+key_config["voltage_scan"]+key_config["voltage_monitor"]+key_config['cpc_counting']+ key_config["cpc_serial"],
+            key_config["blower"]
+            + key_config["voltage_scan"]
+            + key_config["voltage_monitor"]
+            + key_config["cpc_counting"]
+            + key_config["cpc_serial"],
             self.file_dir_e,
         )
         log_elapsed = 0
@@ -85,7 +89,9 @@ class DataLogging:
                 try:
                     self.set_dia = self.all_data["voltset"]["dia set"]
                     self.concentration = self.all_data["count"]["concentration"]
-                    self.voltage_monitor = self.all_data["voltmon"]["supply_volt"]
+                    self.voltage_monitor = self.all_data["voltmon"][
+                        "supply_volt"
+                    ]
                     self.flow_read = self.all_data["blower"]["flow"]
                 except Exception as e:
                     print(e)
@@ -158,7 +164,7 @@ class DataLogging:
 
                 else:
                     pass
-                
+
                 # else:
                 #     # First loop
                 #     self.scan["dia"].append(datetime.now())
@@ -223,7 +229,10 @@ class DataLogging:
         Format: [scan_time, avg_dia, avg_conc, avg_dndlndp]"""
         # Flatten scan data dictionary to list for CSV export
         list_scan_data = [self.scan[value] for value in self.scan]
-        flat_scan_data = [item for sublist in self.scan for item in sublist]
+        # flat_scan_data = [item for sublist in self.scan for item in sublist]
+        flat_scan_data = [
+            item for sublist in self.scan.values() for item in sublist
+        ]
         print(f"List scan data {list_scan_data}")
         print(f"Flast scan data {flat_scan_data}")
         # Write line to file
