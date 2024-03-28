@@ -228,7 +228,7 @@ class VoltageControl:
 
         # Constants for voltage set intervals
         curr_time = time.monotonic()
-        update_time = 0.500  # seconds
+        update_time = 1  # seconds
 
         while not self.stop_threads.is_set():
             try:

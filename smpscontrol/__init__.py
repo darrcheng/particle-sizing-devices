@@ -72,6 +72,7 @@ class SMPS:
         self.count_queue = queue.Queue()
         self.serial_queue = queue.Queue()
         self.fill_queue = queue.Queue(maxsize=5)
+        self.graph_queue = queue.Queue()
 
         # Create barriers for thread control
         self.thread_config = self.config["threads"]
@@ -423,6 +424,7 @@ class SMPS:
             self.close_barrier,
             self.file_dir_e,
             self.all_data,
+            self.graph_queue
         )
         # global data_logging_thread
         self.data_logging_thread = threading.Thread(
@@ -579,12 +581,12 @@ class SMPS:
         if graph_line:
             try:
                 # Check for a new timestep
-                if time_data[-1] != np.datetime64(graph_line[0]):
+                if time_data[-1] != np.datetime64(graph_line[0][0]):
                     if True:
                         # Check if diameters are strictly increasing
                         time_data = np.append(
                             time_data,
-                            np.datetime64(graph_line[0]),
+                            np.datetime64(graph_line[0][0]),
                         )
 
                         # Add new diameters to graph data
@@ -600,7 +602,7 @@ class SMPS:
                             dndlndp = np.delete(dndlndp, 0, 0)
 
                         # Create meshgrid for time
-                        y = np.arange(0, len(graph_line) - 1)
+                        y = np.arange(0, len(graph_line[1][1:]))
                         time1, y = np.meshgrid(time_data, y)
 
                         # Plot contour if there's more than one row of data
@@ -630,7 +632,7 @@ class SMPS:
                     # Add time data
                     dt_array = np.empty(0, dtype="datetime64")
                     time_data = np.append(
-                        dt_array, np.datetime64(graph_line[0])
+                        dt_array, np.datetime64(graph_line[0][0])
                     )
 
                     # Add diameter data

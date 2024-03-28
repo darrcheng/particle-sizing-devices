@@ -20,6 +20,7 @@ class DataLogging:
         close_barrier,
         file_dir_e,
         all_data,
+        graph_queue
     ):
         self.config = config
         self.stop_threads = stop_threads
@@ -28,6 +29,7 @@ class DataLogging:
         self.file_dir_e = file_dir_e
         self.all_data = all_data
         self.graph_line = False
+        self.graph_queue = graph_queue
 
     def share_graph_data(self):
         return self.graph_line
@@ -137,33 +139,41 @@ class DataLogging:
                     data_writer = csv.writer(data_file, delimiter=",")
                     data_writer.writerow(all_values)
 
-                # If this is the first scan, set time
-                if not self.scan_time:
-                    self.scan_time.append(datetime.now())
+                if not np.isnan(self.set_dia):
+                    # If this is the first scan, set time
+                    if not self.scan_time:
+                        self.scan_time.append(datetime.now())
+                        self.prev_set_dia = self.set_dia
 
-                # If set diameter is the same, append data to list
-                if self.set_dia == self.prev_set_dia:
-                    self.append_diameter_repeats()
+                    # If set diameter is the same, append data to list
+                    if self.set_dia == self.prev_set_dia:
+                        self.append_diameter_repeats()
 
-                # If set dia is larger, avg data, append to scan and reset
-                elif abs(self.set_dia) > self.prev_set_dia:
-                    self.average_diameter_repeats()
-                    self.reset_and_append_diameter_repeat()
-                    self.prev_set_dia = self.set_dia
+                    # If set dia is larger, avg data, append to scan and reset
+                    elif abs(self.set_dia) > self.prev_set_dia:
+                        self.average_diameter_repeats()
+                        self.reset_and_append_diameter_repeat()
+                        self.prev_set_dia = self.set_dia
 
-                # If set dia is smaller, that indicates a new scan
-                elif abs(self.set_dia) < self.prev_set_dia:
-                    self.average_diameter_repeats()
-                    list_scan_data = self.write_averaged_csv(csv_filepath2)
-                    self.graph_line = list_scan_data.insert(0, self.scan_time)
+                    # If set dia is smaller, that indicates a new scan
+                    elif abs(self.set_dia) < self.prev_set_dia:
+                        # print("Yes!")
+                        self.average_diameter_repeats()
+                        list_scan_data = self.write_averaged_csv(csv_filepath2)
+                        print(list_scan_data)
+                        list_scan_data.insert(0, self.scan_time)
+                        self.graph_line = list_scan_data
+                        print(self.graph_line)
+                        self.graph_queue.put(self.graph_line)
 
-                    # Re-initalize
-                    self.scan_time = [datetime.now()]
-                    self.reset_and_append_diameter_repeat()
-                    self.prev_set_dia = self.set_dia
-
-                else:
-                    pass
+                        # Re-initalize
+                        self.scan_time = [datetime.now()]
+                        self.reset_and_append_diameter_repeat()
+                        self.scan = {"dia": [], "conc": [], "dndlndp": []}
+                        self.prev_set_dia = self.set_dia
+                    else:
+                        pass
+                    # print(self.set_dia, self.prev_set_dia)
 
                 # else:
                 #     # First loop
@@ -233,8 +243,8 @@ class DataLogging:
         flat_scan_data = [
             item for sublist in self.scan.values() for item in sublist
         ]
-        print(f"List scan data {list_scan_data}")
-        print(f"Flast scan data {flat_scan_data}")
+        # print(f"List scan data {list_scan_data}")
+        # print(f"Flat scan data {flat_scan_data}")
         # Write line to file
         with open(csv_filepath2, mode="a", newline="") as data_file:
             data_writer = csv.writer(data_file, delimiter=",")
@@ -242,7 +252,10 @@ class DataLogging:
         return list_scan_data
 
     def reset_and_append_diameter_repeat(self):
-        self.current = {"dia": [], "conc": [], "dndlndp": []}
+        self.current["dia"] = []
+        self.current["conc"] = []
+        self.current["dndlndp"] = []
+        # self.current = {"dia": [], "conc": [], "dndlndp": []}
         self.append_diameter_repeats
 
     def append_diameter_repeats(self):

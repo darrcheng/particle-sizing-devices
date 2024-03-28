@@ -41,7 +41,7 @@ class BlowerControl:
 
         # Constants for flow intervals
         curr_time = time.monotonic()
-        flow_update_time = 0.500  # seconds
+        flow_update_time = 1  # seconds
 
         # Infinite Loop
         while not self.stop_threads.is_set():
