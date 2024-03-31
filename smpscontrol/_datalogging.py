@@ -20,7 +20,7 @@ class DataLogging:
         close_barrier,
         file_dir_e,
         all_data,
-        graph_queue
+        graph_queue,
     ):
         self.config = config
         self.stop_threads = stop_threads
@@ -42,14 +42,17 @@ class DataLogging:
         dlndp = self.config["voltage_set_config"]["dlnDp"]
 
         # Create the subfolder with current date and time
-        start_time, csv_filepath, csv_filepath2 = create_files(
-            dma,
-            data_config["header"],
+        data_headers = (
             key_config["blower"]
             + key_config["voltage_scan"]
             + key_config["voltage_monitor"]
             + key_config["cpc_counting"]
-            + key_config["cpc_serial"],
+            + key_config["cpc_serial"]
+        )
+        start_time, csv_filepath, csv_filepath2 = create_files(
+            dma,
+            data_config["header"],
+            data_headers,
             self.file_dir_e,
         )
         log_elapsed = 0
@@ -74,7 +77,7 @@ class DataLogging:
                     start_time, csv_filepath, csv_filepath2 = create_files(
                         dma,
                         data_config["header"],
-                        data_config["cpc_header"],
+                        data_headers,
                         self.file_dir_e,
                     )
                     log_elapsed = 0
