@@ -6,7 +6,7 @@ import scipy.optimize
 import time
 import traceback
 
-import mobilitycalc
+from . import mobilitycalc
 
 # import shared_var
 

@@ -6,7 +6,7 @@ import traceback
 
 from labjack import ljm
 
-import sensors
+from . import sensors
 
 # import shared_var as shared_var
 

@@ -19,29 +19,29 @@ from matplotlib import dates
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from _blowercontrol import BlowerControl
-from _voltagescan import VoltageControl
-from _datalogging import DataLogging
-from _cpccounting import CPCCount
+from ._blowercontrol import BlowerControl
+from ._voltagescan import VoltageControl
+from ._datalogging import DataLogging
+from ._cpccounting import CPCCount
+from ._cpcserial import CPCSerial
+from ._cpcfill import CPCFill
 
-from _cpcserial import CPCSerial
-
-from _cpcfill import CPCFill
-from _datatest import DataTest
+# from _datatest import DataTest
 
 # import shared_var as shared_var
 
 
 class SMPS:
-    def __init__(self, root):
+    def __init__(self, root, config_file):
         ##### Inital Program Setup ############################################
-        # Allow config file to be passed from .bat file or directly from code
-        if len(sys.argv) > 1:
-            self.config_file = sys.argv[1]
-        else:
-            self.config_file = "..\\long_config.yml"
+        # # Allow config file to be passed from .bat file or directly from code
+        # if len(sys.argv) > 1:
+        #     self.config_file = sys.argv[1]
+        # else:
+        #     self.config_file = "..\\long_config.yml"
 
         # Load config file
+        self.config_file = config_file
         self.program_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(self.program_path, self.config_file), "r") as f:
             self.config = yaml.safe_load(f)
@@ -131,7 +131,7 @@ class SMPS:
             self.close_barrier,
             self.fill_queue,
         )
-        self.data_test = DataTest(self.all_data)
+        # self.data_test = DataTest(self.all_data)
 
         # Data Queue Dict Keys
         key_config = self.config["keys"]
@@ -143,7 +143,8 @@ class SMPS:
 
         ##### GUI Setup ########################################################
         ##### SMPS Settings Input #####
-        self.set_frame = tk.Frame(root)
+        self.root = root
+        self.set_frame = tk.Frame(self.root)
         self.set_frame.grid(row=0, column=0)
         # Heading
         tk.Label(
@@ -265,7 +266,7 @@ class SMPS:
         self.start_b.grid(row=10, column=0, columnspan=3)
 
         ##### Parameter Monitor #####
-        self.monitor = tk.Frame(root)
+        self.monitor = tk.Frame(self.root)
         self.monitor.grid(row=0, column=1)
         self.dma_monitor = tk.Frame(self.monitor)
         self.dma_monitor.grid(row=0)
@@ -365,7 +366,7 @@ class SMPS:
         ############# Graph
 
         # Create a figure and axis for the contourf plot
-        self.graph_frame = tk.Frame(root)
+        self.graph_frame = tk.Frame(self.root)
         self.graph_frame.grid(row=0, column=2)
         fig = Figure(figsize=(5, 4), dpi=100)
         self.ax = fig.add_subplot()
@@ -424,7 +425,7 @@ class SMPS:
             self.close_barrier,
             self.file_dir_e,
             self.all_data,
-            self.graph_queue
+            self.graph_queue,
         )
         # global data_logging_thread
         self.data_logging_thread = threading.Thread(
@@ -478,7 +479,7 @@ class SMPS:
         self.stop_threads.set()
         self.close_barrier.wait()
         ljm.close(self.handle)
-        root.destroy()
+        self.root.destroy()
 
     def voltageCycle_callback(self):
         if self.voltage_scan.is_set() == False:
@@ -529,7 +530,7 @@ class SMPS:
             self.curr_time = self.curr_time + self.read_update_time
         next_time = self.curr_time + self.read_update_time - time.monotonic()
 
-        root.after(int(next_time * 1000), self.read_thread_data)
+        self.root.after(int(next_time * 1000), self.read_thread_data)
 
     # Program to update gui
     def update_gui(self):
@@ -566,8 +567,8 @@ class SMPS:
         except:
             print("No CPC Count Data")
         # self.data_test.print_data()
-        root.update()
-        root.after(1000, self.update_gui)
+        self.root.update()
+        self.root.after(1000, self.update_gui)
 
     # Create a function to update the contourf plot
     def update_contourf(self, time_data, dp, dndlndp):
@@ -654,11 +655,13 @@ class SMPS:
         self.canvas.draw()
 
         # Schedule the function to be called again after 1 minute
-        root.after(60000, lambda: self.update_contourf(time_data, dp, dndlndp))
+        self.root.after(
+            60000, lambda: self.update_contourf(time_data, dp, dndlndp)
+        )
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Instrument GUI")
-    app = SMPS(root)  # , "test_config.yml")
-    root.mainloop()
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     root.title("Instrument GUI")
+#     app = SMPS(root, "..\\long_config.yml")
+#     root.mainloop()

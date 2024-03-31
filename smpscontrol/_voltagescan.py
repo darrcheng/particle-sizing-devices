@@ -1,6 +1,5 @@
 from datetime import datetime
 import numpy as np
-import sensors
 import sys
 import threading
 import time
@@ -8,7 +7,8 @@ import traceback
 
 from labjack import ljm
 
-import mobilitycalc
+from . import mobilitycalc
+from . import sensors
 
 # import shared_var as shared_var
 

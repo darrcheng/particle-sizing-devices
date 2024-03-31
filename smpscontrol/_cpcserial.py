@@ -1,6 +1,5 @@
 import time
 from datetime import datetime  # Pulls current time from system
-import shared_var as shared_var
 import threading
 import traceback
 import serial
@@ -74,11 +73,13 @@ class CPCSerial:
                 self.fill_queue.put(responses[data_config["fill_index"]])
 
                 # Calculate runtime
-                serial_runtime = time.monotonic() - curr_time - update_time 
+                serial_runtime = time.monotonic() - curr_time - update_time
 
                 # Create dictionary of serial data
                 responses = [datetime.now()] + responses + [serial_runtime]
-                serial_data = dict(zip(self.config["keys"]["cpc_serial"], responses))
+                serial_data = dict(
+                    zip(self.config["keys"]["cpc_serial"], responses)
+                )
                 # serial_data = {
                 #     "cpc serial thread time": datetime.now(),
                 #     **serial_data,
