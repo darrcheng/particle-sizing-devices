@@ -157,6 +157,7 @@ class DataLogging:
                         self.reset_and_append_diameter_repeat()
                         self.scan = {"dia": [], "conc": [], "dndlndp": []}
                         self.prev_set_dia = self.set_dia
+                        scan_start_time = datetime.now()
                     else:
                         pass
                     # print(self.set_dia, self.prev_set_dia)
