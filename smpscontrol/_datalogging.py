@@ -69,6 +69,9 @@ class DataLogging:
         curr_time = time.monotonic()
         update_time = 1  # seconds
 
+        # Start time for each scan
+        scan_start_time = datetime.now()
+
         # Infinite Loop
         while not self.stop_threads.is_set():
             try:
@@ -121,27 +124,7 @@ class DataLogging:
                 else:
                     self.dndlndp = 0
 
-                # Construct row to export to CSV
-                calc_values = [
-                    datetime.now(),
-                    count,
-                    log_elapsed,
-                    self.calculated_dia,
-                    self.dndlndp,
-                ]
-                data_values = [
-                    value
-                    for sub_dict in self.all_data.values()
-                    for value in sub_dict.values()
-                ]
-
-                all_values = calc_values + data_values
-
-                # Write all raw data to CSV file
-                with open(csv_filepath, mode="a", newline="") as data_file:
-                    data_writer = csv.writer(data_file, delimiter=",")
-                    data_writer.writerow(all_values)
-
+                ##### Construct processed output ##############################
                 if not np.isnan(self.set_dia):
                     # If this is the first scan, set time
                     if not self.scan_time:
@@ -177,6 +160,28 @@ class DataLogging:
                     else:
                         pass
                     # print(self.set_dia, self.prev_set_dia)
+
+                ##### Construct raw CSV output ################################
+                calc_values = [
+                    datetime.now(),
+                    count,
+                    log_elapsed,
+                    scan_start_time,
+                    self.calculated_dia,
+                    self.dndlndp,
+                ]
+                data_values = [
+                    value
+                    for sub_dict in self.all_data.values()
+                    for value in sub_dict.values()
+                ]
+
+                all_values = calc_values + data_values
+
+                # Write all raw data to CSV file
+                with open(csv_filepath, mode="a", newline="") as data_file:
+                    data_writer = csv.writer(data_file, delimiter=",")
+                    data_writer.writerow(all_values)
 
                 # else:
                 #     # First loop
