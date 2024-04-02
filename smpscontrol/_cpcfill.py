@@ -47,7 +47,10 @@ class CPCFill:
 
             try:
                 # Check if CPC butanol reservior is not full
-                fill_status = self.fill_queue.get_nowait()
+                try:
+                    fill_status = self.fill_queue.get_nowait()
+                except:
+                    fill_status = "FULL"
                 if fill_status == "NOTFULL":
                     # Open valve
                     ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)

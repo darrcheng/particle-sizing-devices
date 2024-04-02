@@ -163,10 +163,10 @@ class DataLogging:
                         # print("Yes!")
                         self.average_diameter_repeats()
                         list_scan_data = self.write_averaged_csv(csv_filepath2)
-                        print(list_scan_data)
+                        # print(list_scan_data)
                         list_scan_data.insert(0, self.scan_time)
                         self.graph_line = list_scan_data
-                        print(self.graph_line)
+                        # print(self.graph_line)
                         self.graph_queue.put(self.graph_line)
 
                         # Re-initalize
