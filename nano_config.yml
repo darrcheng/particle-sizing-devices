@@ -74,5 +74,5 @@ gui_config:
   "scan_polarity": "positive"
 pid_config:
   "pidp" : 0.2
-  "pidi" : 0 #0.1
+  "pidi" : 0.05 #0.1
   "pidd" : 0
