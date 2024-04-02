@@ -144,6 +144,7 @@ class SMPS:
         ##### GUI Setup ########################################################
         ##### SMPS Settings Input #####
         self.root = root
+        self.root.protocol("WM_DELETE_WINDOW", self.onClose)
         self.set_frame = tk.Frame(self.root)
         self.set_frame.grid(row=0, column=0)
         # Heading
