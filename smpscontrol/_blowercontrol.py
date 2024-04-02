@@ -36,7 +36,11 @@ class BlowerControl:
         gui_config = self.config["gui_config"]
 
         # Set flow to 0 LPM and pause to allow blower to slow down
-        ljm.eWriteName(self.handle, labjack_io["flow_set_output"], 0)
+        ljm.eWriteName(
+            self.handle,
+            labjack_io["flow_set_output"],
+            sensor_config["flow_start"],
+        )
         time.sleep(5)
 
         # Constants for flow intervals

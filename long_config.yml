@@ -55,6 +55,7 @@ sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
   "flow_offset" : 0.9947
+  "flow_start" : 2
   "voltage_factor" : 2017.8 #2000*1.0089
   "voltage_offset" : -0.014157 # 29.93/2017.8
 gui_config:
