@@ -42,6 +42,9 @@ class CPCCount:
             try:
                 if count_error:
                     try:
+                        self.handle = ljm.openS(
+                            "T7", "ANY", self.config["labjack"]
+                        )
                         prev_time, prev_count = initalize_labjack_counting(
                             self.handle, labjack_io
                         )
@@ -193,11 +196,21 @@ def initalize_labjack_counting(handle, labjack_io):
     )  # Enable high-speed counter
 
     # Configure pulse width in
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 0)  # Disable pulse width
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_CONFIG_A", 0)  # Set to one shot
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_INDEX", 5)  # Set input as pulse width
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_OPTIONS", 0)  # Set to clock 0
-    ljm.eWriteName(handle, labjack_io["width"] + "_EF_ENABLE", 1)  # Enable pulse width
+    ljm.eWriteName(
+        handle, labjack_io["width"] + "_EF_ENABLE", 0
+    )  # Disable pulse width
+    ljm.eWriteName(
+        handle, labjack_io["width"] + "_EF_CONFIG_A", 0
+    )  # Set to one shot
+    ljm.eWriteName(
+        handle, labjack_io["width"] + "_EF_INDEX", 5
+    )  # Set input as pulse width
+    ljm.eWriteName(
+        handle, labjack_io["width"] + "_EF_OPTIONS", 0
+    )  # Set to clock 0
+    ljm.eWriteName(
+        handle, labjack_io["width"] + "_EF_ENABLE", 1
+    )  # Enable pulse width
 
     # Initialize time variables and previous count
     prev_time = time.monotonic()
