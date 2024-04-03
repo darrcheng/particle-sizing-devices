@@ -13,7 +13,7 @@ keys:
   "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
   "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
   "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
-  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","pulse width error","concentration no-deadtime","cpc count runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","good pulses","bad pulses","concentration no-deadtime","cpc count runtime"]
   "cpc_serial" :  ['cpc serial thread time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level',"serial runtime"]
 data_config:
   "header": ["Datetime","Count","Elapsed Time","Scan Start Time","Calculated Diameter [nm]","dNdlnDp"]

@@ -57,29 +57,29 @@ class CPCCount:
                 pulse_counter = time.monotonic()
                 pulse_width_error = 0
                 pulse_width = 0
+                pulse_zero = 0
 
                 # # If counts are too high, don't pulse count
                 # if shared_var.curr_count < 1e6:
-                #     # Repeatedly measure the pulse width and keep an error counter
-                #     while (time.monotonic() - pulse_counter) < (
-                #         update_time * 0.8
-                #     ) and not stop_threads.is_set():
-                #         pulse_width_single = ljm.eReadName(
-                #             handle, labjack_io["width"] + "_EF_READ_A_F_AND_RESET"
-                #         )
-                #         if pulse_width_single < 1:
-                #             pulse_width_list.append(pulse_width_single)
-                #         else:
-                #             pulse_error = pulse_error + 1
-                #         pulses = pulses + 1
-                #     if pulse_width_list:
-                #         raw_pulse_width = sum(pulse_width_list)
-                #     else:
-                #         raw_pulse_width = 0
+                # Repeatedly measure the pulse width and keep an error counter
+                while (time.monotonic() - pulse_counter) < (
+                    update_time * 0.8
+                ) and not self.stop_threads.is_set():
+                    pulse_width_single = ljm.eReadName(
+                        self.handle,
+                        labjack_io["width"] + "_EF_READ_A_F_AND_RESET",
+                    )
+                    if pulse_width_single < 1 and pulse_width_single > 0:
+                        pulse_width = pulse_width + pulse_width_single
+                    elif pulse_width_single == 0:
+                        pulse_zero = pulse_zero + 1
+                    else:
+                        pulse_error = pulse_error + 1
+                    pulses = pulses + 1
                 # else:
                 #     shared_var.concentration = -9999
                 #     shared_var.pulse_width = -9999
-                raw_pulse_width = 0
+                # raw_pulse_width = 0
 
                 # Read the current count from the high-speed counter
                 count = ljm.eReadName(
@@ -92,15 +92,14 @@ class CPCCount:
                 elapsed_time = count_time - prev_time
 
                 # Calculate the true pulse width from counts and measured pulse width
-                if (pulses - pulse_error) > 0:
-                    pulse_width = raw_pulse_width * (
-                        (count - prev_count) / (pulses - pulse_error)
-                    )
+                good_pulses = pulses - pulse_error - pulse_zero
+                if (good_pulses) > 0:
+                    pulse_width = pulse_width * ((curr_count) / (good_pulses))
                     # Calculate error assuming pulse errors are due to short pulses
-                    if pulse_width > 0:
-                        pulse_width_error = (
-                            pulse_error * 50e-9 / pulse_width * 100
-                        )
+                    # if pulse_width > 0:
+                    #     pulse_width_error = (
+                    #         pulse_error * 50e-9 / pulse_width * 100
+                    #     )
                 else:
                     pulse_width = 0
 
@@ -135,7 +134,8 @@ class CPCCount:
                     "concentration": concentration,
                     "count": curr_count,
                     "pulse width": pulse_width,
-                    "pulse width error": pulse_width_error,
+                    "good pulses": good_pulses,
+                    "bad pulses": pulse_width_error,
                     "concentration no-deadtime": concentration_nodead,
                     "cpc count runtime": cpc_counting_runtime,
                 }
