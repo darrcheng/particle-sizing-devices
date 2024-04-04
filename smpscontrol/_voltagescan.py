@@ -24,6 +24,9 @@ class VoltageControl:
         voltage_scan,
         voltmon_queue,
         voltset_queue,
+        # labjack_condition,
+        # labjack_pulse,
+        labjack_counting,
     ):
         self.handle = handle
         self.config = config
@@ -33,6 +36,9 @@ class VoltageControl:
         self.voltage_scan = voltage_scan
         self.voltmon_queue = voltmon_queue
         self.voltset_queue = voltset_queue
+        # self.labjack_condition = labjack_condition
+        # self.labjack_pulse = labjack_pulse
+        self.labjack_counting = labjack_counting
 
         self.voltscan_thread = threading.Thread(target=self.set_dma_voltage)
         self.voltmon_thread = threading.Thread(target=self.read_voltage_monitor)
@@ -232,7 +238,13 @@ class VoltageControl:
 
         while not self.stop_threads.is_set():
             try:
+                self.labjack_counting.wait()
+                # with self.labjack_condition:
+                #     self.labjack_condition.wait_for(
+                #         lambda: self.labjack_pulse.is_set()
+                #     )
                 # Read in HV supply voltage and update GUI
+
                 voltage_monitor = sensors.hv_update(
                     self.handle,
                     labjack_io["voltage_monitor_input"],

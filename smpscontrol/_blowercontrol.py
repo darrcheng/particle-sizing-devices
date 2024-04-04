@@ -13,13 +13,22 @@ from . import sensors
 
 class BlowerControl:
     def __init__(
-        self, handle, config, stop_threads, close_barrier, blower_queue
+        self,
+        handle,
+        config,
+        stop_threads,
+        close_barrier,
+        blower_queue,
+        # labjack_condition,
+        # labjack_pulse,
     ):
         self.handle = handle
         self.config = config
         self.stop_threads = stop_threads
         self.close_barrier = close_barrier
         self.blower_queue = blower_queue
+        # self.labjack_condition = labjack_condition
+        # self.labjack_pulse = labjack_pulse
 
         self.thread = threading.Thread(target=self.blower)  # , args=(self.pid))
 
@@ -50,6 +59,8 @@ class BlowerControl:
         # Infinite Loop
         while not self.stop_threads.is_set():
             try:
+                # with self.labjack_condition:
+                #     self.condition.wait_for(lambda: self.labjack_pulse)
                 # Read temperature
                 temp_read = sensors.temp_update(
                     self.handle,
