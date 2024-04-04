@@ -42,6 +42,7 @@ class CPCCount:
             try:
                 if count_error:
                     try:
+                        time.sleep(0.5)
                         self.handle = ljm.openS(
                             "T7", "ANY", self.config["labjack"]
                         )
