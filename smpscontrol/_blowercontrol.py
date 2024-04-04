@@ -19,6 +19,7 @@ class BlowerControl:
         stop_threads,
         close_barrier,
         blower_queue,
+        labjack_counting,
         # labjack_condition,
         # labjack_pulse,
     ):
@@ -29,6 +30,7 @@ class BlowerControl:
         self.blower_queue = blower_queue
         # self.labjack_condition = labjack_condition
         # self.labjack_pulse = labjack_pulse
+        self.labjack_counting = labjack_counting
 
         self.thread = threading.Thread(target=self.blower)  # , args=(self.pid))
 
@@ -61,6 +63,7 @@ class BlowerControl:
             try:
                 # with self.labjack_condition:
                 #     self.condition.wait_for(lambda: self.labjack_pulse)
+                self.labjack_counting.wait()
                 # Read temperature
                 temp_read = sensors.temp_update(
                     self.handle,

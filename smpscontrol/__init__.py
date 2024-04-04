@@ -107,6 +107,7 @@ class SMPS:
             self.blower_queue,
             # self.labjack_condition,
             # self.labjack_pulse,
+            self.labjack_counting,
         )
         self.voltage_control = VoltageControl(
             self.handle,
