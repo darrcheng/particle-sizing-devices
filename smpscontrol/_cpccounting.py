@@ -11,13 +11,20 @@ import labjack.ljm as ljm
 
 class CPCCount:
     def __init__(
-        self, handle, config, stop_threads, close_barrier, count_queue
+        self,
+        handle,
+        config,
+        stop_threads,
+        close_barrier,
+        count_queue,
+        labjack_counting,
     ):
         self.handle = handle
         self.config = config
         self.stop_threads = stop_threads
         self.close_barrier = close_barrier
         self.count_queue = count_queue
+        self.labjack_counting = labjack_counting
 
         self.thread = threading.Thread(target=self.cpc_conc)
 
@@ -65,6 +72,10 @@ class CPCCount:
 
                 # # If counts are too high, don't pulse count
                 # if shared_var.curr_count < 1e6:
+
+                # Block other threads from using the LabJack
+                self.labjack_counting.clear()
+
                 # Repeatedly measure the pulse width and keep an error counter
                 while (time.monotonic() - pulse_counter) < (
                     update_time * 0.8
@@ -90,6 +101,9 @@ class CPCCount:
                     self.handle, labjack_io["counter"] + "_EF_READ_A"
                 )
                 curr_count = count - prev_count
+
+                # Allow other threads to read use the LabJack
+                self.labjack_counting.set()
 
                 # Calculate the elapsed time since the last count
                 count_time = time.monotonic()

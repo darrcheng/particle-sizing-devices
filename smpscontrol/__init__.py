@@ -74,6 +74,12 @@ class SMPS:
         self.fill_queue = queue.Queue(maxsize=5)
         self.graph_queue = queue.Queue()
 
+        # Create conditon for Labjack connection control
+        # self.labjack_condition = threading.Condition()
+        # self.labjack_pulse = False
+        self.labjack_counting = threading.Event()
+        self.labjack_counting.set()
+
         # Create barriers for thread control
         self.thread_config = self.config["threads"]
         num_data_threads = (
@@ -99,6 +105,8 @@ class SMPS:
             self.stop_threads,
             self.close_barrier,
             self.blower_queue,
+            # self.labjack_condition,
+            # self.labjack_pulse,
         )
         self.voltage_control = VoltageControl(
             self.handle,
@@ -109,6 +117,9 @@ class SMPS:
             self.voltage_scan,
             self.voltmon_queue,
             self.voltset_queue,
+            # self.labjack_condition,
+            # self.labjack_pulse,
+            self.labjack_counting,
         )
         self.cpc_count = CPCCount(
             self.handle,
@@ -116,6 +127,9 @@ class SMPS:
             self.stop_threads,
             self.close_barrier,
             self.count_queue,
+            # self.labjack_condition,
+            # self.labjack_pulse,
+            self.labjack_counting,
         )
         self.cpc_serial = CPCSerial(
             self.config,
