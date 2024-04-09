@@ -56,7 +56,7 @@ class CPCFill:
                     ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)
                     print(str(datetime.now()) + ": Filling")
                     # Pause
-                    time.sleep(0.5)
+                    time.sleep(0.25)
 
                     # Close valve
                     ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
