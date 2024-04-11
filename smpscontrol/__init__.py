@@ -145,6 +145,7 @@ class SMPS:
             self.stop_threads,
             self.close_barrier,
             self.fill_queue,
+            self.labjack_counting
         )
         # self.data_test = DataTest(self.all_data)
 

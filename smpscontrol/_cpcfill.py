@@ -11,12 +11,21 @@ from labjack import ljm
 
 
 class CPCFill:
-    def __init__(self, handle, config, stop_threads, close_barrier, fill_queue):
+    def __init__(
+        self,
+        handle,
+        config,
+        stop_threads,
+        close_barrier,
+        fill_queue,
+        labjack_counting,
+    ):
         self.handle = handle
         self.config = config
         self.stop_threads = stop_threads
         self.close_barrier = close_barrier
         self.fill_queue = fill_queue
+        self.labjack_counting = labjack_counting
 
         self.thread = threading.Thread(target=self.cpc_fill)
 
@@ -47,6 +56,8 @@ class CPCFill:
 
             try:
                 # Check if CPC butanol reservior is not full
+                self.labjack_counting.wait()
+
                 try:
                     fill_status = self.fill_queue.get_nowait()
                 except:
@@ -58,6 +69,9 @@ class CPCFill:
                     # Pause
                     time.sleep(0.5)
 
+                    # Close valve
+                    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
+                else:
                     # Close valve
                     ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
 
