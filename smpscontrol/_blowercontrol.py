@@ -131,4 +131,5 @@ class BlowerControl:
                 break
 
         print("Shutdown: Sheath Flow Sensors")
+        ljm.eWriteName(self.handle, labjack_io["flow_set_output"], 0)
         self.close_barrier.wait()
