@@ -395,6 +395,8 @@ class SMPS:
         # Reconfigure Start Button to Stop Button
         self.start_b.configure(text="Stop", command=self.onClose)
 
+        self.pause_for_even_time()
+
         # Pull in GUI settings
         new_set = {}
         new_set["low_dia_lim"] = float(self.low_dia_e.get())
