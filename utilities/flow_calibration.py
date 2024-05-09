@@ -3,11 +3,13 @@ import time
 from labjack import ljm
 
 # Labjack IO
+# labjack_serial = 470024288 #nano
+labjack_serial = 470024266 # long
 blower_io = "TDAC2"
 flowmeter_io = "AIN0"
 
 # Load Labjack
-handle = ljm.openS("T7", "ANY", "ANY")
+handle = ljm.openS("T7", "ANY", labjack_serial)
 info = ljm.getHandleInfo(handle)
 print(info)
 
@@ -17,7 +19,7 @@ ljm.eWriteName(handle, blower_io, blower_voltage)
 
 # Let blower come to speed
 print("Blower is coming to speed...")
-time.sleep(10)
+time.sleep(30)
 
 # Read flowmeter voltage once a second for a minute
 flowmeter_voltages = []
@@ -28,7 +30,7 @@ for i in range(60):
 
 # Average the flowmeter voltages
 flowmeter_voltage_avg = sum(flowmeter_voltages) / len(flowmeter_voltages)
-print("Flowmeter voltage: " + str(flowmeter_voltages))
+print("Blower voltage: " + str(blower_voltage))
 print("Average flowmeter voltage: " + str(flowmeter_voltage_avg))
 
 # Check if user is done measuring flow
