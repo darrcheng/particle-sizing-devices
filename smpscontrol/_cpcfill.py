@@ -55,19 +55,23 @@ class CPCFill:
             #     serial_good = True
 
             try:
+                # Close valve
+                ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
+
+                fill_status = "FULL"
                 # Check if CPC butanol reservior is not full
                 self.labjack_counting.wait()
-
                 try:
                     fill_status = self.fill_queue.get_nowait()
-                except:
+                except Exception as e:
+                    print(e)
                     fill_status = "FULL"
                 if fill_status == "NOTFULL":
                     # Open valve
-                    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)
                     print(str(datetime.now()) + ": Filling")
+                    ljm.eWriteName(self.handle, labjack_io["fill_valve"], 1)
                     # Pause
-                    time.sleep(0.25)
+                    time.sleep(0.5)
 
                     # Close valve
                     ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
@@ -90,6 +94,8 @@ class CPCFill:
             except BaseException as e:
                 print("CPC Fill Valve Error")
                 print(traceback.format_exc())
+                # Close valve
+                ljm.eWriteName(self.handle, labjack_io["fill_valve"], 0)
                 break
         print("Shutdown: CPC Fill Valve")
         self.close_barrier.wait()
