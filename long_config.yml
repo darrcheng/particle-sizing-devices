@@ -9,11 +9,16 @@ threads:
   "cpc_counting" : True
   "cpc_serial" : True
   "cpc_fill" : False
+keys:
+  "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
+  "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
+  "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","good pulses","bad pulses","concentration no-deadtime","cpc count runtime"]
+  "cpc_serial" : ["cpc serial thread time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number","corrected counts","uncorrected counts","serial runtime"]
 data_config:
-  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","dNdlnDp","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "header": ["Datetime","Count","Elapsed Time","Scan Start Time","Calculated Diameter [nm]","dNdlnDp"]
   "serial_commands": ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]
-  "cpc_header" :  ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number","corrected counts","uncorrected counts"] 
-  "serial_port": "COM5"
+  "serial_port": "COM8"
   "serial_baud": 115200
   "serial_bytesize": 8
   "serial_parity": "N"
@@ -48,13 +53,14 @@ voltage_set_config:
   "dlnDp" : 0.114195
 sensor_config:
   "temp_factor" : 0.01
-  "flow_factor" : 5.8343
-  "flow_offset" : 0.9947
+  "flow_factor" : 5.4912
+  "flow_offset" : 0.9496
+  "flow_start" : 2
   "voltage_factor" : 2017.8 #2000*1.0089
   "voltage_offset" : -0.014157 # 29.93/2017.8
 gui_config:
   "low_dia_lim" : 10
-  "high_dia_lim" : 600  
+  "high_dia_lim" : 350 
   "bins" : 50  # Number of steps in voltage cycle
   "voltage_update_time" : 10000  # Time between each voltage step
   "blower_flow_set" : 10 # LPM
@@ -67,6 +73,6 @@ gui_config:
   "y_max" : 500
   "scan_polarity": "positive"
 pid_config:
-  "pidp" : 0.2
-  "pidi" : 0
+  "pidp" : 0.05
+  "pidi" : 0.005
   "pidd" : 0

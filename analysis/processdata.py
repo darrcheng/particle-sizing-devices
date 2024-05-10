@@ -9,7 +9,7 @@ from analysisfnc import *
 data_dir = r"C:\Users\d95st\PhD Files\Data\Pittsburgh 23"
 
 # Set analysis dates
-dates = list(daterange.daterange("2023-09-28", "2023-09-30"))
+dates = list(daterange.daterange("2023-09-12", "2023-09-27"))
 
 dma_list = ["longdma", "nanodma"]
 

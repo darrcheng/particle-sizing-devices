@@ -1,5 +1,6 @@
 ---
 dma: "test"
+start_interval: 1
 threads:
   "blower" : True
   "voltage_scan" : True
@@ -7,9 +8,15 @@ threads:
   "datalogging" : True
   "cpc_counting" : True
   "cpc_serial" : False
-  "cpc_fill" : True
+  "cpc_fill" : False
+keys:
+  "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
+  "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
+  "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","pulse width error","concentration no-deadtime","cpc count runtime"]
+  "cpc_serial" : ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
 data_config:
-  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "header": ["Datetime","Count","Elapsed Time","Calculated Diameter [nm]","dNdlnDp","Set Voltage [V]","Set Diameter [nm]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
   "serial_commands": ['RD','R1','R2','R3','R4','R5','R6','R7','RE','RB','R0']
   "cpc_header" :  ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
   "serial_port": "COM6"
@@ -43,6 +50,8 @@ voltage_set_config:
   "dma_eff_length": 13 # [m]
   "dma_sample_flow" : 1800 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
+  "dlnDp" : 0.1243460
+  "dlnDp" : 0.114195
 sensor_config:
   "temp_factor" : 0.01
   "flow_factor" : 5.8343
