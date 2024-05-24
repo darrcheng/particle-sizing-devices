@@ -204,7 +204,8 @@ class DataLogging:
                 print("Data Logging Error")
                 print(traceback.format_exc())
                 # print(e)
-                break
+                # break
+                raise
         print("Shutdown: Data Logging")
         self.close_barrier.wait()
 
