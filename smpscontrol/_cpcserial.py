@@ -63,6 +63,10 @@ class CPCSerial:
                     # Append response to the list
                     responses.extend(response)
 
+                # Print response to screen once every 10 minutes
+                if time.monotonic() % (10 * 60) < update_time:
+                    print(responses)
+
                 # # Share CPC data with other threads
                 # shared_var.cpc_serial_read = [datetime.now()] + responses
                 # shared_var.fill_status = responses[data_config["fill_index"]]
