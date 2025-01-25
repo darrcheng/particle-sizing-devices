@@ -191,6 +191,10 @@ class DataLogging:
                 #     previous_diameter = shared_var.set_diameter
 
                 self.datalog_barrier.clear()
+                
+                # Print response to screen once every 10 minutes
+                if time.monotonic() % (10 * 60) < update_time:
+                    print(f"{str(datetime.now())}: Datalogging Good")
 
                 # Schedule the next update
                 curr_time = curr_time + update_time
@@ -204,7 +208,8 @@ class DataLogging:
                 print("Data Logging Error")
                 print(traceback.format_exc())
                 # print(e)
-                break
+                # break
+                raise
         print("Shutdown: Data Logging")
         self.close_barrier.wait()
 

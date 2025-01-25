@@ -137,3 +137,6 @@ dmypy.json
 # Graphs
 *.png
 *.jpg
+
+# Junk
+junk/

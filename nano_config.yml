@@ -40,6 +40,7 @@ labjack_io :
   "fill_valve" : "DIO6"
 cpc_config:
   "cpc_flowrate" : 0.7833 # 1200/60 cubic centimeters per second
+  "deadtime_correct" : False
 voltage_set_config:
   "voltage_set_factor" : 500 # 10000/5 (supply range)/5
   "voltage_offset_calibration" : 0

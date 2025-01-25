@@ -40,6 +40,7 @@ labjack_io :
   "fill_valve" : "nan"
 cpc_config:
   "cpc_flowrate" : 16.6667 # 300/60 cubic centimeters per second
+  "deadtime_correct" : False
 voltage_set_config:
   "voltage_set_factor" : 2001 #1857.527 # 10000/5 (supply range)/5 (includes calibration between set V and multimeter readout)
   "voltage_offset_calibration" : 0.00244802921 #0.004585 
