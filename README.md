@@ -1,7 +1,7 @@
 # Particle Sizing Devices (PSD)
 The Particle Sizing Devices (PSD) consists of two scanning mobility particle sizers (SMPS) that measure the particle size distribution between 1.5 and 300 nm. Each SMPS has a neutralizer to charge the sampled particles, a differential mobility analyzer to size select the charged particles, and a condensation particle counter to count the sized selected particles. This GUI records the data, and shows a preview of the measured size distribution. The program outputs a raw data file and a rough inverted results file for each SMPS and creates a new file on each time the program starts or the start of a day. 
 
-[sample SMPS contour plot](docs/sample_contour.png)
+![sample SMPS contour plot](docs/sample_contour.png)
 
 ## Getting Started
 ### Installing
