@@ -8,7 +8,7 @@ from smpscontrol import SMPS
 if len(sys.argv) > 1:
     config_file = sys.argv[1]
 else:
-    config_file = "..\\long_config.yml"
+    config_file = "..\\sample_config.yml"
 
 root = tk.Tk()
 app = SMPS(root, config_file)
