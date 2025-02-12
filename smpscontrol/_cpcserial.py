@@ -49,6 +49,13 @@ class CPCSerial:
 
         while not self.stop_threads.is_set():
             try:
+                # Send startup commands once an hour
+                if time.monotonic() % (60 * 60) < update_time:
+                    if data_config["start_commands"]:
+                        for start_command in data_config["start_commands"]:
+                            ser.write((start_command + "\r").encode())
+                            ser.readline().decode().rstrip()
+
                 # Store responses in a list
                 responses = []
 
