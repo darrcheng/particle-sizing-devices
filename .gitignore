@@ -132,3 +132,11 @@ dmypy.json
 
 # Data files
 202*
+*.csv
+
+# Graphs
+*.png
+*.jpg
+
+# Junk
+junk/

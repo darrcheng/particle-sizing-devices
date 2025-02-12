@@ -1,0 +1,77 @@
+---
+dma:              # string: Name of the DMA
+start_interval:   # int: Round time interval to start the DMA
+threads:
+  "blower" :            # bool: True if blower control is enabled
+  "voltage_scan" :      # bool: True if voltage scanning is enabled
+  "voltage_monitor" :   # bool: True if voltage monitoring is enabled
+  "datalogging" :       # bool: True if datalogging is enabled
+  "cpc_counting" :      # bool: True if CPC counting is enabled
+  "cpc_serial" :        # bool: True if CPC serial communication is enabled
+  "cpc_fill" :          # bool: True if CPC fill is enabled
+keys:
+  "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
+  "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
+  "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","pulse width error","concentration no-deadtime","cpc count runtime"]
+  "cpc_serial" : ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
+data_config:
+  "header":             # list of strings: List of headers for the data file
+  "serial_commands":    # list of strings: List of commands to send to the CPC
+  "serial_port":        # string: Serial port for the CPC serial communication
+  "serial_baud":        # int: Baud rate for the CPC serial communication
+  "serial_bytesize":    # int: Number of bits for the CPC serial communication
+  "serial_parity":      # string: Parity setting for the CPC serial communication
+  "serial_timeout":     # float: Timeout for the CPC serial communication
+  "start_commands" :    # list: List of commands to send to the CPC at the start of the experiment
+  "fill_index":         # int: Index of the fill status in the serial commands
+labjack :         # int: Serial number of the LabJack
+labjack_io :
+  "flow_read_input":          # string: LabJack input for the flow sensor
+  "voltage_monitor_input":    # string: LabJack input for the voltage monitor
+  "press_input":              # string: LabJack input for the pressure sensor
+  "temp_input":               # string: LabJack input for the temperature sensor
+  "rh_input":                 # string: LabJack input for the relative humidity sensor
+  "voltage_set_output_pos":   # string: LabJack output for the positive voltage set
+  "voltage_set_output_neg":   # string: LabJack output for the negative voltage set
+  "flow_set_output":          # string: LabJack output for the blower power
+  "counter":                  # string: LabJack input for the CPC counter
+  "width":                    # string: LabJack input for the CPC pulse width
+  "fill_valve" :              # string: LabJack output for the CPC fill valve
+cpc_config:
+  "cpc_flowrate" :        # float: CPC aersol flow rate in [cm/s]
+  "deadtime_correct" :    # bool: True if deadtime correction is enabled
+voltage_set_config:
+  "voltage_set_factor" :          # float: high voltage supply factor
+  "voltage_offset_calibration" :  # float: voltage offset calibration
+  "dma_outer_radius" :            # float: DMA outer radius [cm]
+  "dma_inner_radius" :            # float: DMA inner radius [cm]
+  "dma_length" :                  # float: DMA length [cm]
+  "dma_eff_length":               # float: DMA effective length [m]
+  "dma_sample_flow" :             # float: DMA sample flow [SCCM]
+  "aerosol_charge" :              # int: aersol charge, -1 for negative, 1 for positive
+  "dlnDp" :                       # float: DMA dlnDp spacing
+sensor_config:
+  "temp_factor" :       # float: temperature calibration factor
+  "flow_factor" :       # float: flow calibration factor
+  "flow_offset" :       # float: flow calibration offset
+  "flow_start" :        # float: flow start voltage [V]
+  "voltage_factor" :    # float: voltage monitor calibration factor
+  "voltage_offset" :    # float: voltage monitor calibration offset
+gui_config:
+  "low_dia_lim" :           # float: low diameter scan limit [nm]
+  "high_dia_lim" :          # float: high diameter scan limit [nm]
+  "bins" :                  # int: Number of steps in voltage scan
+  "voltage_update_time" :   # int: dwell time at each voltage step [ms]
+  "blower_flow_set" :       # float: blower flow setpoint [LPM]
+  "diameter_list" :         # list of floats: list of diameters to scan [nm]
+  "default_mode" :          # str: default mode, 'dia_list' or 'dia_range'
+  "contour_min" :           # float: minimum contour plot colorbar value
+  "contour_max" :           # float: maximum contour plot colorbar value
+  "y_min" :                 # float: minimum contour plot y-axis value
+  "y_max" :                 # float: maximum contour plot y-axis value
+  "scan_polarity":          # str: scan polarity, 'positive' or 'negative'
+pid_config:
+  "pidp" :      # float: proportional gain
+  "pidi" :      # float: integral gain
+  "pidd" :      # float: derivative gain

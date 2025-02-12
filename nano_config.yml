@@ -9,8 +9,14 @@ threads:
   "cpc_counting" : True
   "cpc_serial" : True
   "cpc_fill" : True
+keys:
+  "blower" : ["blower thread time","temp","rh","press","flow","blower runtime"]
+  "voltage_scan" : ["volt set thread time","volt set","dia set","volt set runtime"]
+  "voltage_monitor" : ["volt monitor thread time","supply_volt","volt monitor runtime"]
+  "cpc_counting" : ["cpc count thread time","concentration","count","pulse width","good pulses","bad pulses","concentration no-deadtime","cpc count runtime"]
+  "cpc_serial" :  ['cpc serial thread time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level',"serial runtime"]
 data_config:
-  "header": ["Count","Timer","Elapsed Time","Set Diameter [nm]","Calculated Diameter [nm]","Set Voltage [V]","Actual Voltage [V]","Flow Rate [LPM]","Temperature [C]","RH [%]","Pressure [kPa]","Concentration [#/cc]","Concentration No Deadtime[#/cc]","Counts [#]","Pulse Width [s]","Pulse Width Error [%]","dNdlnDp","Blower Control Runtime [s]","Voltage Update Runtime [s]","Voltage Monitor Runtime [s]","CPC Counting Runtime [s]","Datalogging Runtime[s]"]
+  "header": ["Datetime","Count","Elapsed Time","Scan Start Time","Calculated Diameter [nm]","dNdlnDp"]
   "serial_commands": ['RD','R1','R2','R3','R4','R5','R6','R7','RE','RB','R0']
   "cpc_header" :  ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
   "serial_port": "COM7"
@@ -18,7 +24,7 @@ data_config:
   "serial_bytesize": 7
   "serial_parity": "E"
   "serial_timeout": 0.05
-  "start_commands" : ['TS440','TO460']
+  "start_commands" : ['TS440','TO460',"TC100"]
   "fill_index": 10
 labjack : 470024288
 labjack_io :
@@ -35,6 +41,7 @@ labjack_io :
   "fill_valve" : "DIO6"
 cpc_config:
   "cpc_flowrate" : 0.7833 # 1200/60 cubic centimeters per second
+  "deadtime_correct" : False
 voltage_set_config:
   "voltage_set_factor" : 500 # 10000/5 (supply range)/5
   "voltage_offset_calibration" : 0
@@ -44,12 +51,13 @@ voltage_set_config:
   "dma_eff_length": 1.58 # [m] Jiang 2011
   "dma_sample_flow" : 2000 #[sccm]
   "aerosol_charge" : -1 # [-1 for negative, 1 for positive]
-  "dlnDp" : 0.1243460
+  "dlnDp_old" : 0.1243460
   "dlnDp" : 0.114195
 sensor_config:
   "temp_factor" : 0.01
-  "flow_factor" : 3.9
-  "flow_offset" : 0.7043
+  "flow_factor" : 5.4215
+  "flow_offset" : 1.2104
+  "flow_start" : 2.3
   "voltage_factor" : 500
   "voltage_offset" : 0
 gui_config:
@@ -67,6 +75,6 @@ gui_config:
   "y_max" : 50
   "scan_polarity": "positive"
 pid_config:
-  "pidp" : 0.2
-  "pidi" : 0 #0.1
+  "pidp" : 0.05
+  "pidi" : 0.005 #0.1
   "pidd" : 0
