@@ -18,7 +18,8 @@ keys:
 data_config:
   "header": ["Datetime","Count","Elapsed Time","Scan Start Time","Calculated Diameter [nm]","dNdlnDp"]
   "serial_commands": ["RALL", "RSF", "RIF","RSN","RCOUNT1","RCOUNT2"]
-  "serial_port": "COM8"
+  "cpc_header" :  ["time", "concentration","instrument errors","saturator temp","condensor temp","optics temp", "cabinet temp","ambient pressure","orifice pressure","nozzle pressure","laser current","liquid level","aersol flow", "inlet flow","serial number","corrected counts","uncorrected counts"] 
+  "serial_port": "COM6"
   "serial_baud": 115200
   "serial_bytesize": 8
   "serial_parity": "N"

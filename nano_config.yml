@@ -18,6 +18,7 @@ keys:
 data_config:
   "header": ["Datetime","Count","Elapsed Time","Scan Start Time","Calculated Diameter [nm]","dNdlnDp"]
   "serial_commands": ['RD','R1','R2','R3','R4','R5','R6','R7','RE','RB','R0']
+  "cpc_header" :  ['time','concentration','condensor temp','saturator temp','optics temp','flow','ready environment','reference detector voltage','detector voltage','pump control value','1 second counts','liquid level']
   "serial_port": "COM7"
   "serial_baud": 9600
   "serial_bytesize": 7
