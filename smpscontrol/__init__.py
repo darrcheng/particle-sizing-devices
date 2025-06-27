@@ -145,7 +145,7 @@ class SMPS:
             self.stop_threads,
             self.close_barrier,
             self.fill_queue,
-            self.labjack_counting
+            self.labjack_counting,
         )
         # self.data_test = DataTest(self.all_data)
 
@@ -161,6 +161,20 @@ class SMPS:
         ##### SMPS Settings Input #####
         self.root = root
         self.root.protocol("WM_DELETE_WINDOW", self.onClose)
+
+        # Disable Alt key menu activation to prevent GUI freezing on Windows
+        self.root.option_add("*tearOff", False)  # Disable tear-off menus
+        self.root.attributes("-toolwindow", 0)  # Ensure it's not a tool window
+
+        # Bind Alt key to do nothing (prevents menu activation)
+        def disable_alt(event):
+            return "break"
+
+        self.root.bind("<Alt_L>", disable_alt)
+        self.root.bind("<Alt_R>", disable_alt)
+        self.root.bind("<KeyPress-Alt_L>", disable_alt)
+        self.root.bind("<KeyPress-Alt_R>", disable_alt)
+
         self.set_frame = tk.Frame(self.root)
         self.set_frame.grid(row=0, column=0)
         # Heading
@@ -548,6 +562,7 @@ class SMPS:
         else:
             self.curr_time = self.curr_time + self.read_update_time
         next_time = self.curr_time + self.read_update_time - time.monotonic()
+        next_time = max(next_time, 1)
 
         self.root.after(int(next_time * 1000), self.read_thread_data)
 
