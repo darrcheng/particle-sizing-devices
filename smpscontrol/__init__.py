@@ -562,7 +562,6 @@ class SMPS:
         else:
             self.curr_time = self.curr_time + self.read_update_time
         next_time = self.curr_time + self.read_update_time - time.monotonic()
-        next_time = max(next_time, 1)
 
         self.root.after(int(next_time * 1000), self.read_thread_data)
 
